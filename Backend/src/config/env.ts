@@ -1,0 +1,58 @@
+import dotenv from "dotenv";
+import { z } from "zod";
+
+dotenv.config();
+
+/**
+ * Centralised, validated environment access.
+ * Runtime-critical vars (Mongo, JWT) are required; integration vars (Cloudinary,
+ * mail) are optional so the app can boot in development before they're filled in —
+ * the features that need them fail loudly at call time instead of at boot.
+ */
+const schema = z.object({
+  PORT: z.coerce.number().default(4000),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  CLIENT_URL: z.string().default("http://localhost:3000"),
+
+  MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
+
+  JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
+  JWT_EXPIRES_IN: z.string().default("7d"),
+
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+
+  MAIL_HOST: z.string().optional(),
+  MAIL_PORT: z.coerce.number().optional(),
+  MAIL_USER: z.string().optional(),
+  MAIL_PASS: z.string().optional(),
+  MAIL_FROM: z.string().default("Cricket Academy <no-reply@cricketacademy.com>"),
+});
+
+// Accept either MAIL_* (this app's convention) or SMTP_* (the existing app's
+// convention) so a shared .env works without duplicating mail credentials.
+const mergedEnv = {
+  ...process.env,
+  MAIL_HOST: process.env.MAIL_HOST ?? process.env.SMTP_HOST,
+  MAIL_PORT: process.env.MAIL_PORT ?? process.env.SMTP_PORT,
+  MAIL_USER: process.env.MAIL_USER ?? process.env.SMTP_USER,
+  MAIL_PASS: process.env.MAIL_PASS ?? process.env.SMTP_PASS,
+  MAIL_FROM: process.env.MAIL_FROM ?? process.env.SMTP_FROM,
+};
+
+const parsed = schema.safeParse(mergedEnv);
+
+if (!parsed.success) {
+  console.error("❌ Invalid environment configuration:");
+  console.error(parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+
+export const env = parsed.data;
+
+export const isCloudinaryConfigured = Boolean(
+  env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET
+);
+
+export const isMailConfigured = Boolean(env.MAIL_HOST && env.MAIL_USER && env.MAIL_PASS);
