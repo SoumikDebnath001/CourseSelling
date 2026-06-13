@@ -4,7 +4,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "res.cloudinary.com" },
+      // CloudFront CDN (thumbnails) — covers the default *.cloudfront.net domain…
+      { protocol: "https", hostname: "**.cloudfront.net" },
+      // …and an optional custom CDN domain (e.g. cdn.yoursite.com) if you set one.
+      ...(process.env.NEXT_PUBLIC_CDN_HOSTNAME
+        ? [{ protocol: "https" as const, hostname: process.env.NEXT_PUBLIC_CDN_HOSTNAME }]
+        : []),
+      { protocol: "https", hostname: "res.cloudinary.com" }, // legacy assets
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },

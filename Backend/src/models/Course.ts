@@ -17,6 +17,8 @@ export interface ICourse extends Document {
   modules: Types.ObjectId[];
   finalTest?: Types.ObjectId | null;
   instructions: string[];
+  /** Accent colour used on the completion certificate (hex). */
+  certificateColor: string;
   status: "Draft" | "Published";
   studentsEnrolledCount: number;
 }
@@ -36,6 +38,7 @@ const courseSchema = new Schema<ICourse>(
     modules: [{ type: Schema.Types.ObjectId, ref: "Ca_Module" }],
     finalTest: { type: Schema.Types.ObjectId, ref: "Ca_Test", default: null },
     instructions: { type: [String], default: [] },
+    certificateColor: { type: String, default: "#4f46e5" },
     status: { type: String, enum: ["Draft", "Published"], default: "Draft" },
     studentsEnrolledCount: { type: Number, default: 0 },
   },

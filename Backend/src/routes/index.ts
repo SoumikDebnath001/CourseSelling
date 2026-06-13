@@ -11,6 +11,7 @@ import testRoutes from "./test";
 import ratingRoutes from "./rating";
 import adminRoutes from "./admin";
 import contactRoutes from "./contact";
+import settingsRoutes from "./settings";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/tests", testRoutes);
 router.use("/ratings", ratingRoutes);
 router.use("/admin", adminRoutes);
 router.use("/contact", contactRoutes);
+router.use("/settings", settingsRoutes);
 
 export default router;

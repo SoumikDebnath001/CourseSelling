@@ -7,7 +7,7 @@ import { Module } from "../models/Module";
 import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { uniqueSlug } from "../utils/slug";
-import { uploadFile, destroyFile } from "../utils/cloudinaryUpload";
+import { uploadFile, deleteFile } from "../utils/storage";
 
 export const createCourseSchema = z.object({
   courseName: z.string().min(3),
@@ -17,6 +17,7 @@ export const createCourseSchema = z.object({
   tags: z.union([z.string(), z.array(z.string())]).optional(),
   category: z.string().optional(),
   instructions: z.union([z.string(), z.array(z.string())]).optional(),
+  certificateColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #4f46e5").optional(),
 });
 
 function toArray(v?: string | string[]): string[] {
@@ -38,8 +39,8 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
 
   let thumbnail;
   if (thumbFile) {
-    const up = await uploadFile(thumbFile, "thumbnails", "image");
-    thumbnail = { url: up.url, publicId: up.publicId };
+    const up = await uploadFile(thumbFile, "thumbnails");
+    thumbnail = { url: up.url, publicId: up.key };
   }
 
   const course = await Course.create({
@@ -51,6 +52,7 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
     tags: toArray(body.tags),
     instructions: toArray(body.instructions),
     category: body.category || undefined,
+    certificateColor: body.certificateColor || undefined,
     thumbnail,
     createdByAdmin: req.auth!.id,
     createdByName: req.auth!.name,
@@ -69,9 +71,9 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   const thumbFile = req.files?.thumbnail as UploadedFile | undefined;
 
   if (thumbFile) {
-    await destroyFile(course.thumbnail?.publicId, "image");
-    const up = await uploadFile(thumbFile, "thumbnails", "image");
-    course.thumbnail = { url: up.url, publicId: up.publicId };
+    await deleteFile(course.thumbnail?.publicId);
+    const up = await uploadFile(thumbFile, "thumbnails");
+    course.thumbnail = { url: up.url, publicId: up.key };
   }
   if (body.courseName !== undefined) course.courseName = body.courseName;
   if (body.courseDescription !== undefined) course.courseDescription = body.courseDescription;
@@ -80,6 +82,7 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   if (body.category !== undefined) course.category = (body.category || undefined) as never;
   if (body.tags !== undefined) course.tags = toArray(body.tags);
   if (body.instructions !== undefined) course.instructions = toArray(body.instructions);
+  if (body.certificateColor !== undefined) course.certificateColor = body.certificateColor;
 
   await course.save();
   res.json({ success: true, course });
@@ -98,19 +101,19 @@ export const setCourseStatus = asyncHandler(async (req: Request, res: Response) 
   res.json({ success: true, course });
 });
 
-/** Admin: delete course and cascade its modules + topics (+ Cloudinary assets). */
+/** Admin: delete course and cascade its modules + topics (+ S3 assets). */
 export const deleteCourse = asyncHandler(async (req: Request, res: Response) => {
   const course = await Course.findById(req.params.id);
   if (!course) throw new ApiError(404, "Course not found");
 
   const topics = await Topic.find({ course: course._id });
   for (const t of topics) {
-    await destroyFile(t.videoPublicId, "video");
-    for (const r of t.resources) await destroyFile(r.publicId, "raw");
+    await deleteFile(t.videoPublicId);
+    for (const r of t.resources) await deleteFile(r.publicId);
   }
   await Topic.deleteMany({ course: course._id });
   await Module.deleteMany({ course: course._id });
-  await destroyFile(course.thumbnail?.publicId, "image");
+  await deleteFile(course.thumbnail?.publicId);
   await course.deleteOne();
 
   res.json({ success: true, message: "Course deleted" });

@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Plus, Trash2, Video, ClipboardCheck, Trophy, Upload } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Video, ClipboardCheck, Trophy, Upload, Award, Eye } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TestBuilder } from "@/components/admin/TestBuilder";
 import { Button } from "@/components/ui/Button";
@@ -11,8 +11,10 @@ import {
   useAdminCourse,
   useCourseStatus,
   useCourseBuilderActions,
+  useUpdateCourse,
 } from "@/hooks/useAdmin";
-import type { Module, TestRef } from "@/types/api";
+import { generateCertificate } from "@/lib/certificate";
+import type { Course, Module, TestRef } from "@/types/api";
 
 type TestTarget =
   | { scope: "module"; moduleId: string; existing?: TestRef | null }
@@ -99,6 +101,9 @@ function Builder({ courseId }: { courseId: string }) {
         </div>
       </div>
 
+      {/* Certificate */}
+      <CertificateCard course={course} />
+
       {testTarget && (
         <TestBuilder
           courseId={courseId}
@@ -179,15 +184,33 @@ function ModuleCard({
   );
 }
 
+/** Reads a video file's duration (seconds) in the browser, before upload. */
+function readVideoDuration(file: File): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    const el = document.createElement("video");
+    el.preload = "metadata";
+    el.onloadedmetadata = () => {
+      URL.revokeObjectURL(el.src);
+      resolve(Number.isFinite(el.duration) ? Math.round(el.duration) : undefined);
+    };
+    el.onerror = () => resolve(undefined);
+    el.src = URL.createObjectURL(file);
+  });
+}
+
 function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: string; loading: boolean; onSubmit: (fd: FormData) => void; onCancel: () => void }) {
   const [video, setVideo] = useState<File | null>(null);
   const [resources, setResources] = useState<FileList | null>(null);
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     fd.append("moduleId", moduleId);
-    if (video) fd.append("video", video);
+    if (video) {
+      fd.append("video", video);
+      const dur = await readVideoDuration(video);
+      if (dur) fd.append("timeDurationSec", String(dur));
+    }
     if (resources) Array.from(resources).forEach((f) => fd.append("resources", f));
     onSubmit(fd);
   };
@@ -209,6 +232,50 @@ function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: str
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
     </form>
+  );
+}
+
+function CertificateCard({ course }: { course: Course }) {
+  const update = useUpdateCourse(course._id);
+  const [color, setColor] = useState(course.certificateColor ?? "#4f46e5");
+
+  const save = () => {
+    const fd = new FormData();
+    fd.append("certificateColor", color);
+    update.mutate(fd);
+  };
+
+  const preview = () =>
+    generateCertificate({ studentName: "Student Name", courseName: course.courseName, color });
+
+  return (
+    <div className="card mt-6 p-4">
+      <div className="flex items-center gap-2">
+        <Award className="h-5 w-5 text-grape-600" />
+        <div>
+          <p className="font-semibold text-ink-900">Completion certificate</p>
+          <p className="text-xs text-ink-400">Pick the accent colour students see on their certificate.</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-3">
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="h-10 w-16 cursor-pointer rounded border border-ink-300 bg-white p-1"
+          />
+          <span className="font-mono text-sm text-ink-600">{color.toUpperCase()}</span>
+        </label>
+        <Button variant="ghost" onClick={preview}>
+          <Eye className="h-4 w-4" /> Preview
+        </Button>
+        <Button onClick={save} loading={update.isPending} disabled={color === (course.certificateColor ?? "#4f46e5")}>
+          Save colour
+        </Button>
+      </div>
+    </div>
   );
 }
 

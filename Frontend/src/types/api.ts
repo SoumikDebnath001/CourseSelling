@@ -6,6 +6,28 @@ export interface LoginResponse {
   account: AuthAccount;
 }
 
+export interface Settings {
+  platformName: string;
+  email?: string;
+  contactPhone?: string;
+  place?: string;
+  hero: {
+    badge?: string;
+    title?: string;
+    highlight?: string;
+    subtitle?: string;
+    videoUrl?: string;
+  };
+  foundation: {
+    websiteUrl?: string;
+    youtubeUrl?: string;
+  };
+  watermark: {
+    enabled: boolean;
+    opacity: number;
+  };
+}
+
 export interface Category {
   _id: string;
   name: string;
@@ -67,6 +89,7 @@ export interface Course {
   modules: Module[];
   finalTest?: TestRef | null;
   instructions: string[];
+  certificateColor?: string;
   status: "Draft" | "Published";
   studentsEnrolledCount: number;
 }
@@ -89,6 +112,16 @@ export interface EnrolledCourse {
   totalTopics: number;
   completedTopics: number;
   percent: number;
+}
+
+export interface Transaction {
+  id: string;
+  invoiceNo: string;
+  course: { _id: string; courseName: string; slug: string };
+  amountPaid: number;
+  paymentRef: string;
+  status: "active" | "cancelled";
+  date: string;
 }
 
 export interface CommentNode {

@@ -6,7 +6,7 @@ import fileUpload from "express-fileupload";
 
 import { env } from "./config/env";
 import { connectDB } from "./config/db";
-import { connectCloudinary } from "./config/cloudinary";
+import { logS3Status } from "./config/s3";
 import { notFound, errorHandler } from "./middleware/error";
 import apiRoutes from "./routes";
 
@@ -38,7 +38,7 @@ app.use(errorHandler);
 
 async function start() {
   await connectDB();
-  connectCloudinary();
+  logS3Status();
   const server = app.listen(env.PORT, () => {
     console.log(`🚀 API listening on http://localhost:${env.PORT}/api/v1`);
   });

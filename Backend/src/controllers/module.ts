@@ -4,7 +4,7 @@ import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Course } from "../models/Course";
 import { Module } from "../models/Module";
 import { Topic } from "../models/Topic";
-import { destroyFile } from "../utils/cloudinaryUpload";
+import { deleteFile } from "../utils/storage";
 
 export const createModuleSchema = z.object({
   courseId: z.string().min(1),
@@ -41,8 +41,8 @@ export const deleteModule = asyncHandler(async (req: Request, res: Response) => 
 
   const topics = await Topic.find({ module: module._id });
   for (const t of topics) {
-    await destroyFile(t.videoPublicId, "video");
-    for (const r of t.resources) await destroyFile(r.publicId, "raw");
+    await deleteFile(t.videoPublicId);
+    for (const r of t.resources) await deleteFile(r.publicId);
   }
   await Topic.deleteMany({ module: module._id });
   await Course.findByIdAndUpdate(module.course, { $pull: { modules: module._id } });

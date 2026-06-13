@@ -40,3 +40,13 @@ export function useMyEnrolledCourses() {
     },
   });
 }
+
+export function useMyTransactions() {
+  return useQuery({
+    queryKey: ["my-transactions"],
+    queryFn: async () => {
+      const { data } = await api.get("/enroll/transactions");
+      return data.transactions as import("@/types/api").Transaction[];
+    },
+  });
+}

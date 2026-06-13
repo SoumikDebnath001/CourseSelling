@@ -49,6 +49,17 @@ export default function NewCoursePage() {
         <Field label="Requirements (one per line)">
           <textarea name="instructions" className="input min-h-16" />
         </Field>
+        <Field label="Certificate colour">
+          <div className="flex items-center gap-3">
+            <input
+              name="certificateColor"
+              type="color"
+              defaultValue="#4f46e5"
+              className="h-10 w-16 cursor-pointer rounded border border-ink-300 bg-white p-1"
+            />
+            <span className="text-xs text-ink-400">Accent colour used on the course completion certificate.</span>
+          </div>
+        </Field>
         <Field label="Thumbnail">
           <input type="file" accept="image/*" onChange={(e) => setThumb(e.target.files?.[0] ?? null)} className="text-sm" />
         </Field>

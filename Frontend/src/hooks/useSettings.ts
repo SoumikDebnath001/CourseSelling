@@ -1,0 +1,68 @@
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { api, apiError } from "@/lib/axios";
+import type { Settings } from "@/types/api";
+
+/** Sensible defaults so the UI renders before settings load / if the request fails. */
+export const DEFAULT_SETTINGS: Settings = {
+  platformName: "Cricket Academy",
+  hero: {},
+  foundation: {},
+  watermark: { enabled: true, opacity: 0.04 },
+};
+
+/** Public platform settings — branding, contact, hero copy, foundation links. */
+export function useSettings() {
+  const query = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const { data } = await api.get<{ settings: Partial<Settings> }>("/settings");
+      const s = data.settings ?? {};
+      // Mongoose omits empty nested objects from JSON — re-fill them so the UI can
+      // always read settings.hero.badge etc. without guarding every access.
+      return {
+        ...DEFAULT_SETTINGS,
+        ...s,
+        hero: { ...s.hero },
+        foundation: { ...s.foundation },
+        watermark: { ...DEFAULT_SETTINGS.watermark, ...s.watermark },
+      } as Settings;
+    },
+    staleTime: 5 * 60_000,
+  });
+  return { ...query, settings: query.data ?? DEFAULT_SETTINGS };
+}
+
+/** Admin: save platform settings. */
+export function useUpdateSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<Settings>) => {
+      const { data } = await api.put<{ settings: Settings }>("/settings", payload);
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Settings saved");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Turn a YouTube URL (watch, youtu.be, or embed) into an embeddable URL. */
+export function youtubeEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([\w-]{11})/,
+    /youtube\.com\/watch\?v=([\w-]{11})/,
+    /youtube\.com\/embed\/([\w-]{11})/,
+    /youtube\.com\/shorts\/([\w-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  }
+  return null;
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { Download, FileText, LinkIcon, CheckCircle2 } from "lucide-react";
+import { Download, FileText, LinkIcon, Check } from "lucide-react";
 import type { Topic } from "@/types/api";
-import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   topic: Topic;
@@ -12,11 +12,23 @@ interface Props {
 }
 
 export function VideoPlayer({ topic, completed, onComplete, completing }: Props) {
+  // Tick automatically the moment the video finishes (idempotent on the server).
+  const handleEnded = () => {
+    if (!completed) onComplete();
+  };
+
   return (
     <div>
       <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
         {topic.videoUrl ? (
-          <video key={topic._id} src={topic.videoUrl} controls className="h-full w-full" controlsList="nodownload" />
+          <video
+            key={topic._id}
+            src={topic.videoUrl}
+            controls
+            onEnded={handleEnded}
+            className="h-full w-full"
+            controlsList="nodownload"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-ink-400">No video for this topic yet.</div>
         )}
@@ -27,16 +39,31 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
           <h1 className="text-xl font-bold text-ink-900">{topic.title}</h1>
           {topic.description && <p className="mt-1 text-sm text-ink-600">{topic.description}</p>}
         </div>
-        <Button
-          variant={completed ? "ghost" : "primary"}
-          onClick={onComplete}
-          loading={completing}
-          disabled={completed}
-          className="shrink-0"
+
+        {/* Tick box (replaces the old "Mark complete" button). Auto-ticks on video end. */}
+        <button
+          type="button"
+          onClick={() => { if (!completed && !completing) onComplete(); }}
+          disabled={completed || completing}
+          aria-pressed={completed}
+          className={cn(
+            "flex shrink-0 items-center gap-2 text-sm font-medium transition",
+            completed ? "text-pitch-700" : "text-ink-500 hover:text-ink-800"
+          )}
         >
-          <CheckCircle2 className="h-4 w-4" />
-          {completed ? "Completed" : "Mark complete"}
-        </Button>
+          <span
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-md border-2 transition",
+              completed
+                ? "border-pitch-500 bg-pitch-500 text-white"
+                : "border-ink-300 bg-white",
+              completing && "opacity-60"
+            )}
+          >
+            {completed && <Check className="h-4 w-4" strokeWidth={3} />}
+          </span>
+          {completed ? "Completed" : "Mark as done"}
+        </button>
       </div>
 
       {topic.resources?.length > 0 && (

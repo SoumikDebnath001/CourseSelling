@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, FolderTree, Users } from "lucide-react";
+import { LayoutDashboard, BookOpen, FolderTree, Users, Settings } from "lucide-react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { AccountBar } from "@/components/layout/AccountBar";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const nav = [
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/students", label: "Members", icon: Users },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

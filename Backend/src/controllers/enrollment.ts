@@ -6,6 +6,7 @@ import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { CourseProgress } from "../models/CourseProgress";
 import { paymentProvider } from "../services/payment";
+import { signedVideoUrl } from "../utils/storage";
 import { sendMailAsync } from "../mail/mailSender";
 import { courseEnrollmentEmail } from "../mail/templates";
 
@@ -70,6 +71,33 @@ export const myEnrolledCourses = asyncHandler(async (req: Request, res: Response
   res.json({ success: true, courses: result });
 });
 
+/** Student: purchase history — every enrollment (active + cancelled) as a transaction. */
+export const myTransactions = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.auth!.id;
+  const enrollments = await Enrollment.find({ userId })
+    .populate({ path: "course", select: "courseName slug" })
+    .sort({ enrolledAt: -1 })
+    .lean();
+
+  const transactions = enrollments
+    .filter((e) => e.course)
+    .map((e) => {
+      const course = e.course as unknown as { _id: string; courseName: string; slug: string };
+      return {
+        id: e._id.toString(),
+        // Stable, human-friendly invoice number derived from the enrollment id + date.
+        invoiceNo: `INV-${new Date(e.enrolledAt).getFullYear()}-${e._id.toString().slice(-6).toUpperCase()}`,
+        course: { _id: course._id, courseName: course.courseName, slug: course.slug },
+        amountPaid: e.amountPaid,
+        paymentRef: e.paymentRef,
+        status: e.status,
+        date: e.enrolledAt,
+      };
+    });
+
+  res.json({ success: true, transactions });
+});
+
 /** Student/Admin: full course content (videos + resources) — gated by enrollment. */
 export const getFullCourse = asyncHandler(async (req: Request, res: Response) => {
   const course = await Course.findById(req.params.courseId)
@@ -85,6 +113,16 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
     .populate("finalTest", "title description scope passingScorePct timeLimitMins isPublished")
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
+
+  // Swap stored CDN URLs for short-lived signed URLs so paid videos can't be
+  // shared. No-op (returns the plain CDN URL) until signing keys are configured.
+  type LeanTopic = { videoUrl?: string; videoPublicId?: string };
+  type LeanModule = { topics?: LeanTopic[] };
+  for (const m of (course.modules as unknown as LeanModule[]) ?? []) {
+    for (const t of m.topics ?? []) {
+      if (t.videoPublicId) t.videoUrl = signedVideoUrl(t.videoPublicId);
+    }
+  }
 
   const userId = req.auth!.id;
   const progress = await CourseProgress.findOne({ userId, course: course._id }).lean();

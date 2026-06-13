@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { useState, type ReactNode } from "react";
+import { Watermark } from "@/components/layout/Watermark";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
+      <Watermark />
       {children}
       <Toaster
         position="top-center"

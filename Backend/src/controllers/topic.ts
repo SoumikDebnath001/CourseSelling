@@ -4,7 +4,7 @@ import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Module } from "../models/Module";
 import { Topic, IResource } from "../models/Topic";
-import { uploadFile, destroyFile } from "../utils/cloudinaryUpload";
+import { uploadFile, deleteFile } from "../utils/storage";
 
 export const createTopicSchema = z.object({
   moduleId: z.string().min(1),
@@ -29,19 +29,20 @@ export const createTopic = asyncHandler(async (req: Request, res: Response) => {
   let timeDurationSec: number | undefined;
 
   if (videoFile) {
-    const up = await uploadFile(videoFile, "videos", "video");
+    const up = await uploadFile(videoFile, "videos");
     videoUrl = up.url;
-    videoPublicId = up.publicId;
-    timeDurationSec = up.durationSec;
+    videoPublicId = up.key; // S3 object key (used for signing + deletes)
   } else if (req.body.videoUrl) {
-    videoUrl = String(req.body.videoUrl); // allow pasting an existing Cloudinary URL
+    videoUrl = String(req.body.videoUrl); // allow pasting an existing URL
   }
+  // Duration is detected in the browser before upload and sent along.
+  if (req.body.timeDurationSec) timeDurationSec = Math.round(Number(req.body.timeDurationSec)) || undefined;
 
   // Resource files
   const resources: IResource[] = [];
   for (const file of filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined)) {
-    const up = await uploadFile(file, "resources", "auto");
-    resources.push({ name: file.name, url: up.url, publicId: up.publicId, type: "file" });
+    const up = await uploadFile(file, "resources");
+    resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file" });
   }
   // Resource links (JSON array of {name,url})
   if (req.body.links) {
@@ -82,16 +83,18 @@ export const updateTopic = asyncHandler(async (req: Request, res: Response) => {
 
   const videoFile = req.files?.video as UploadedFile | undefined;
   if (videoFile) {
-    await destroyFile(topic.videoPublicId, "video");
-    const up = await uploadFile(videoFile, "videos", "video");
+    await deleteFile(topic.videoPublicId);
+    const up = await uploadFile(videoFile, "videos");
     topic.videoUrl = up.url;
-    topic.videoPublicId = up.publicId;
-    topic.timeDurationSec = up.durationSec;
+    topic.videoPublicId = up.key;
+  }
+  if (req.body.timeDurationSec) {
+    topic.timeDurationSec = Math.round(Number(req.body.timeDurationSec)) || topic.timeDurationSec;
   }
 
   for (const file of filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined)) {
-    const up = await uploadFile(file, "resources", "auto");
-    topic.resources.push({ name: file.name, url: up.url, publicId: up.publicId, type: "file" });
+    const up = await uploadFile(file, "resources");
+    topic.resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file" });
   }
   if (req.body.links) {
     try {
@@ -109,8 +112,8 @@ export const updateTopic = asyncHandler(async (req: Request, res: Response) => {
 export const deleteTopic = asyncHandler(async (req: Request, res: Response) => {
   const topic = await Topic.findById(req.params.id);
   if (!topic) throw new ApiError(404, "Topic not found");
-  await destroyFile(topic.videoPublicId, "video");
-  for (const r of topic.resources) await destroyFile(r.publicId, "raw");
+  await deleteFile(topic.videoPublicId);
+  for (const r of topic.resources) await deleteFile(r.publicId);
   await Module.findByIdAndUpdate(topic.module, { $pull: { topics: topic._id } });
   await topic.deleteOne();
   res.json({ success: true, message: "Topic deleted" });

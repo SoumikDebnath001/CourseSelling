@@ -5,7 +5,7 @@ dotenv.config();
 
 /**
  * Centralised, validated environment access.
- * Runtime-critical vars (Mongo, JWT) are required; integration vars (Cloudinary,
+ * Runtime-critical vars (Mongo, JWT) are required; integration vars (AWS S3,
  * mail) are optional so the app can boot in development before they're filled in —
  * the features that need them fail loudly at call time instead of at boot.
  */
@@ -19,9 +19,19 @@ const schema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   JWT_EXPIRES_IN: z.string().default("7d"),
 
-  CLOUDINARY_CLOUD_NAME: z.string().optional(),
-  CLOUDINARY_API_KEY: z.string().optional(),
-  CLOUDINARY_API_SECRET: z.string().optional(),
+  // ── AWS S3 + CloudFront (media storage & delivery) ──
+  AWS_REGION: z.string().optional(),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  /** CloudFront distribution domain, e.g. d1234abcd.cloudfront.net (no protocol). */
+  CLOUDFRONT_DOMAIN: z.string().optional(),
+  /** Optional: enables signed (protected, expiring) video URLs. */
+  CLOUDFRONT_KEY_PAIR_ID: z.string().optional(),
+  /** PEM private key. Use literal "\n" for newlines in a single-line .env value. */
+  CLOUDFRONT_PRIVATE_KEY: z.string().optional(),
+  /** How long a signed video URL stays valid (seconds). Default 6 hours. */
+  SIGNED_URL_TTL_SEC: z.coerce.number().default(6 * 60 * 60),
 
   MAIL_HOST: z.string().optional(),
   MAIL_PORT: z.coerce.number().optional(),
@@ -51,8 +61,18 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-export const isCloudinaryConfigured = Boolean(
-  env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET
+/** True when uploads + CDN delivery can work (bucket, creds, region, CDN domain set). */
+export const isS3Configured = Boolean(
+  env.AWS_REGION &&
+    env.AWS_ACCESS_KEY_ID &&
+    env.AWS_SECRET_ACCESS_KEY &&
+    env.S3_BUCKET &&
+    env.CLOUDFRONT_DOMAIN
+);
+
+/** True when video URLs can be signed (protected & expiring). Optional upgrade. */
+export const isCloudFrontSigningConfigured = Boolean(
+  env.CLOUDFRONT_KEY_PAIR_ID && env.CLOUDFRONT_PRIVATE_KEY && env.CLOUDFRONT_DOMAIN
 );
 
 export const isMailConfigured = Boolean(env.MAIL_HOST && env.MAIL_USER && env.MAIL_PASS);
