@@ -14,16 +14,19 @@ export default function AdminCategoriesPage() {
 
   return (
     <AdminShell>
-      <h1 className="text-2xl font-bold text-ink-900">Categories</h1>
+      <h1 className="text-2xl font-bold text-ink-900">Paths / Categories</h1>
+      <p className="mt-1 text-sm text-ink-400">
+        A Path is the unified category, tag and filter value for courses (e.g. Fast Bowling, Batting, Fitness). Every course must belong to one.
+      </p>
 
       <div className="card mt-5 max-w-lg space-y-3 p-5">
-        <input className="input" placeholder="Category name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input" placeholder="Path name (e.g. Fast Bowling)" value={name} onChange={(e) => setName(e.target.value)} />
         <input className="input" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <Button
           loading={create.isPending}
           onClick={() => { if (name.trim()) create.mutate({ name: name.trim(), description: description.trim() || undefined }, { onSuccess: () => { setName(""); setDescription(""); } }); }}
         >
-          <Plus className="h-4 w-4" /> Add category
+          <Plus className="h-4 w-4" /> Add path
         </Button>
       </div>
 
@@ -43,7 +46,7 @@ export default function AdminCategoriesPage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-ink-400">No categories yet.</p>
+          <p className="text-sm text-ink-400">No paths yet — add one before creating courses.</p>
         )}
       </div>
     </AdminShell>

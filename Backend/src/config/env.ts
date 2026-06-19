@@ -19,19 +19,20 @@ const schema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   JWT_EXPIRES_IN: z.string().default("7d"),
 
-  // ── AWS S3 + CloudFront (media storage & delivery) ──
-  AWS_REGION: z.string().optional(),
-  AWS_ACCESS_KEY_ID: z.string().optional(),
-  AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  S3_BUCKET: z.string().optional(),
-  /** CloudFront distribution domain, e.g. d1234abcd.cloudfront.net (no protocol). */
-  CLOUDFRONT_DOMAIN: z.string().optional(),
-  /** Optional: enables signed (protected, expiring) video URLs. */
-  CLOUDFRONT_KEY_PAIR_ID: z.string().optional(),
-  /** PEM private key. Use literal "\n" for newlines in a single-line .env value. */
-  CLOUDFRONT_PRIVATE_KEY: z.string().optional(),
-  /** How long a signed video URL stays valid (seconds). Default 6 hours. */
-  SIGNED_URL_TTL_SEC: z.coerce.number().default(6 * 60 * 60),
+  // ── Cloudflare R2 (files: thumbnails + resources) ──
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET: z.string().default("courseselling"),
+  /** Public base URL for the bucket (r2.dev or custom domain), no trailing slash. */
+  R2_PUBLIC_URL: z.string().optional(),
+
+  // ── Cloudflare Stream (course videos: HLS transcode + delivery) ──
+  CF_ACCOUNT_ID: z.string().optional(),
+  /** API token with the "Stream:Edit" permission. */
+  CF_STREAM_API_TOKEN: z.string().optional(),
+  /** Customer subdomain code — the "xyz" in customer-xyz.cloudflarestream.com. */
+  CF_STREAM_CUSTOMER_CODE: z.string().optional(),
 
   MAIL_HOST: z.string().optional(),
   MAIL_PORT: z.coerce.number().optional(),
@@ -61,18 +62,18 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-/** True when uploads + CDN delivery can work (bucket, creds, region, CDN domain set). */
-export const isS3Configured = Boolean(
-  env.AWS_REGION &&
-    env.AWS_ACCESS_KEY_ID &&
-    env.AWS_SECRET_ACCESS_KEY &&
-    env.S3_BUCKET &&
-    env.CLOUDFRONT_DOMAIN
+/** True when R2 file uploads (thumbnails, resources) can work. */
+export const isR2Configured = Boolean(
+  env.R2_ACCOUNT_ID &&
+    env.R2_ACCESS_KEY_ID &&
+    env.R2_SECRET_ACCESS_KEY &&
+    env.R2_BUCKET &&
+    env.R2_PUBLIC_URL
 );
 
-/** True when video URLs can be signed (protected & expiring). Optional upgrade. */
-export const isCloudFrontSigningConfigured = Boolean(
-  env.CLOUDFRONT_KEY_PAIR_ID && env.CLOUDFRONT_PRIVATE_KEY && env.CLOUDFRONT_DOMAIN
+/** True when Cloudflare Stream video uploads + playback can work. */
+export const isStreamConfigured = Boolean(
+  env.CF_ACCOUNT_ID && env.CF_STREAM_API_TOKEN && env.CF_STREAM_CUSTOMER_CODE
 );
 
 export const isMailConfigured = Boolean(env.MAIL_HOST && env.MAIL_USER && env.MAIL_PASS);

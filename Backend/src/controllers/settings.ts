@@ -32,6 +32,19 @@ export const settingsSchema = z.object({
       opacity: z.number().min(0).max(1).optional(),
     })
     .optional(),
+  levels: z
+    .array(
+      z.object({
+        key: z.string().min(1),
+        name: z.string().min(1),
+        label: z.string().optional(),
+        description: z.string().optional(),
+        order: z.coerce.number().int().min(0),
+        unlockPoints: z.coerce.number().int().min(0),
+      })
+    )
+    .min(1)
+    .optional(),
 });
 
 /** Public: the current platform settings (creates defaults on first ever call). */
@@ -49,6 +62,10 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   if (body.email !== undefined) settings.email = body.email;
   if (body.contactPhone !== undefined) settings.contactPhone = body.contactPhone;
   if (body.place !== undefined) settings.place = body.place;
+  if (body.levels !== undefined) {
+    settings.levels = body.levels;
+    settings.markModified("levels");
+  }
 
   if (body.hero) {
     for (const k of ["badge", "title", "highlight", "subtitle", "videoUrl"] as const) {

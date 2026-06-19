@@ -27,7 +27,13 @@ export function useCompleteTopic(courseId: string) {
       const { data } = await api.post(`/progress/${courseId}/complete-topic`, { topicId });
       return data as { completedTopics: string[] };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["full-course", courseId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["full-course", courseId] });
+      // Completing the last topic can finish the course → points/level/certs may change.
+      qc.invalidateQueries({ queryKey: ["my-progression"] });
+      qc.invalidateQueries({ queryKey: ["my-certificates"] });
+      qc.invalidateQueries({ queryKey: ["my-courses"] });
+    },
   });
 }
 

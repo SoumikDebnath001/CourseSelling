@@ -4,17 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { useCreateCourse, useCategoriesAdmin } from "@/hooks/useAdmin";
+import { useSettings } from "@/hooks/useSettings";
+import { LevelSlider } from "@/components/course/LevelSlider";
 import { Button } from "@/components/ui/Button";
 
 export default function NewCoursePage() {
   const router = useRouter();
   const create = useCreateCourse();
   const { list } = useCategoriesAdmin();
+  const { settings } = useSettings();
+  const levels = [...settings.levels].sort((a, b) => a.order - b.order);
+  const entryKey = levels[0]?.key ?? "foundation";
+
   const [thumb, setThumb] = useState<File | null>(null);
+  const [level, setLevel] = useState(entryKey);
+  const [maxLevel, setMaxLevel] = useState(entryKey);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    fd.set("level", level);
+    fd.set("maxLevel", maxLevel);
     if (thumb) fd.append("thumbnail", thumb);
     create.mutate(fd, { onSuccess: (course) => router.push(`/admin/courses/${course._id}`) });
   };
@@ -33,18 +43,40 @@ export default function NewCoursePage() {
           <textarea name="whatYouWillLearn" className="input min-h-20" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Price (₹, 0 = free)">
+          <Field label="Price (KES, 0 = free)">
             <input name="price" type="number" min={0} defaultValue={0} className="input" />
           </Field>
-          <Field label="Category">
-            <select name="category" className="input">
-              <option value="">— none —</option>
+          <Field label="Path / Category (required)">
+            <select name="category" required defaultValue="" className="input">
+              <option value="" disabled>Select a path…</option>
               {list.data?.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>
           </Field>
         </div>
-        <Field label="Tags (comma separated)">
-          <input name="tags" className="input" placeholder="bowling, spin, beginner" />
+        <p className="-mt-2 text-xs text-ink-400">
+          Every course must belong to a Path / Category — it powers filtering, progression and grouping.{" "}
+          <a href="/admin/categories" className="font-medium text-pitch-600 hover:underline">Manage paths</a>
+        </p>
+
+        <Field label="Course type">
+          <select name="courseType" defaultValue="progressive" className="input">
+            <option value="progressive">Progressive (structured path)</option>
+            <option value="miscellaneous">Miscellaneous (standalone)</option>
+          </select>
+        </Field>
+
+        <div>
+          <span className="mb-1 block text-sm font-medium text-ink-700">Course level</span>
+          <LevelSlider levels={levels} value={level} onChange={setLevel} />
+        </div>
+
+        <div>
+          <span className="mb-1 block text-sm font-medium text-ink-700">Highest attainable level (progressive path)</span>
+          <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
+        </div>
+
+        <Field label="Points awarded on completion">
+          <input name="points" type="number" min={0} defaultValue={0} className="input" />
         </Field>
         <Field label="Requirements (one per line)">
           <textarea name="instructions" className="input min-h-16" />

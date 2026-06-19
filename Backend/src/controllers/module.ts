@@ -10,15 +10,16 @@ export const createModuleSchema = z.object({
   courseId: z.string().min(1),
   moduleName: z.string().min(2),
   description: z.string().optional(),
+  points: z.coerce.number().int().min(0).optional(),
 });
 
 export const createModule = asyncHandler(async (req: Request, res: Response) => {
-  const { courseId, moduleName, description } = req.body as z.infer<typeof createModuleSchema>;
+  const { courseId, moduleName, description, points } = req.body as z.infer<typeof createModuleSchema>;
   const course = await Course.findById(courseId);
   if (!course) throw new ApiError(404, "Course not found");
 
   const order = course.modules.length;
-  const module = await Module.create({ course: course._id, moduleName, description, order });
+  const module = await Module.create({ course: course._id, moduleName, description, order, points: points ?? 0 });
   course.modules.push(module._id);
   await course.save();
 
@@ -31,6 +32,7 @@ export const updateModule = asyncHandler(async (req: Request, res: Response) => 
   if (req.body.moduleName !== undefined) module.moduleName = req.body.moduleName;
   if (req.body.description !== undefined) module.description = req.body.description;
   if (req.body.order !== undefined) module.order = Number(req.body.order);
+  if (req.body.points !== undefined) module.points = Number(req.body.points);
   await module.save();
   res.json({ success: true, module });
 });

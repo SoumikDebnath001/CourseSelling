@@ -40,12 +40,121 @@ export function useAdminDashboard() {
   });
 }
 
+export interface AdminStudentCategory {
+  category: { _id: string; name: string } | null;
+  currentLevel: string;
+  points: number;
+}
+
+export interface AdminStudent {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  source: "member" | "platform";
+  enrolledCount: number;
+  certificates: number;
+  totalPoints: number;
+  categories: AdminStudentCategory[];
+}
+
 export function useStudents(search: string) {
   return useQuery({
     queryKey: ["admin-students", search],
     queryFn: async () => {
       const { data } = await api.get("/admin/students", { params: { search: search || undefined } });
-      return data.students as { _id: string; name: string; email: string; role: string; isActive: boolean; enrolledCount: number }[];
+      return data.students as AdminStudent[];
+    },
+  });
+}
+
+export interface StudentProgressionDetail {
+  progression: {
+    _id: string;
+    category: { _id: string; name: string; slug?: string } | null;
+    currentLevel: string;
+    points: number;
+    completedCourses: string[];
+  }[];
+  categories: { _id: string; name: string; slug?: string }[];
+  grants: { _id: string; course: { _id: string; courseName: string; slug: string } | null }[];
+  levels: { key: string; name: string; label?: string; description?: string; order: number; unlockPoints: number }[];
+}
+
+/** Full per-category progression for one user (for the admin overrides panel). */
+export function useStudentProgression(userId: string | null) {
+  return useQuery({
+    queryKey: ["admin-student-progression", userId],
+    queryFn: async () => {
+      const { data } = await api.get(`/admin/students/${userId}/progression`);
+      return data as { success: boolean } & StudentProgressionDetail;
+    },
+    enabled: !!userId,
+  });
+}
+
+function useStudentMutation<V>(fn: (v: V) => Promise<unknown>, success: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      toast.success(success);
+      qc.invalidateQueries({ queryKey: ["admin-students"] });
+      qc.invalidateQueries({ queryKey: ["admin-student-progression"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Promote/demote: set a user's level in one category. */
+export function useSetStudentLevel() {
+  return useStudentMutation<{ userId: string; category: string; level: string }>(
+    (v) => api.patch(`/admin/students/${v.userId}/level`, { category: v.category, level: v.level }),
+    "Level updated"
+  );
+}
+
+/** Add/subtract points in one category. */
+export function useAdjustStudentPoints() {
+  return useStudentMutation<{ userId: string; category: string; delta: number }>(
+    (v) => api.patch(`/admin/students/${v.userId}/points`, { category: v.category, delta: v.delta }),
+    "Points updated"
+  );
+}
+
+/** Grant a user direct access to a course, bypassing locks. */
+export function useGrantCourseAccess() {
+  return useStudentMutation<{ userId: string; course: string }>(
+    (v) => api.post(`/admin/students/${v.userId}/grant`, { course: v.course }),
+    "Access granted"
+  );
+}
+
+export function useRevokeCourseAccess() {
+  return useStudentMutation<{ userId: string; courseId: string }>(
+    (v) => api.delete(`/admin/students/${v.userId}/grant/${v.courseId}`),
+    "Access revoked"
+  );
+}
+
+export interface AdminAnalytics {
+  usersPerLevel: { level: string; name: string; count: number }[];
+  totalPointsEarned: number;
+  mostCompletedCourses: { course: string; courseName: string; completions: number }[];
+  categoryProgression: { category: string | null; categoryName: string; learners: number; points: number; completedCourses: number }[];
+  certificatesIssued: number;
+  advancedLearners: number;
+  totalLearners: number;
+  entryLevelLearners: number;
+}
+
+export function useAdminAnalytics() {
+  return useQuery({
+    queryKey: ["admin-analytics"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/analytics");
+      return data.analytics as AdminAnalytics;
     },
   });
 }
@@ -121,9 +230,17 @@ export function useCourseBuilderActions(courseId: string) {
   const onError = (e: unknown) => toast.error(apiError(e));
 
   const addModule = useMutation({
-    mutationFn: (vars: { moduleName: string; description?: string }) =>
+    mutationFn: (vars: { moduleName: string; description?: string; points?: number }) =>
       api.post("/modules", { ...vars, courseId }),
     onSuccess: () => { toast.success("Module added"); refresh(); },
+    onError,
+  });
+  const updateModule = useMutation({
+    mutationFn: (vars: { id: string; points?: number; moduleName?: string; description?: string }) => {
+      const { id, ...rest } = vars;
+      return api.put(`/modules/${id}`, rest);
+    },
+    onSuccess: () => { toast.success("Module saved"); refresh(); },
     onError,
   });
   const deleteModule = useMutation({ mutationFn: (id: string) => api.delete(`/modules/${id}`), onSuccess: () => { toast.success("Module removed"); refresh(); }, onError });
@@ -133,7 +250,22 @@ export function useCourseBuilderActions(courseId: string) {
     onSuccess: () => { toast.success("Topic added"); refresh(); },
     onError,
   });
+  const updateTopic = useMutation({
+    mutationFn: (vars: { id: string; points?: number; title?: string; description?: string }) => {
+      const { id, ...rest } = vars;
+      return api.put(`/topics/${id}`, rest);
+    },
+    onSuccess: () => { toast.success("Topic saved"); refresh(); },
+    onError,
+  });
   const deleteTopic = useMutation({ mutationFn: (id: string) => api.delete(`/topics/${id}`), onSuccess: () => { toast.success("Topic removed"); refresh(); }, onError });
+
+  const applyPoints = useMutation({
+    mutationFn: (vars: { coursePoints?: number; modulePoints?: number; topicPoints?: number }) =>
+      api.patch(`/courses/${courseId}/points`, vars),
+    onSuccess: () => { toast.success("Points applied"); refresh(); },
+    onError,
+  });
 
   const saveTest = useMutation({
     mutationFn: (vars: { id?: string; payload: Record<string, unknown> }) =>
@@ -143,7 +275,7 @@ export function useCourseBuilderActions(courseId: string) {
   });
   const deleteTest = useMutation({ mutationFn: (id: string) => api.delete(`/tests/${id}`), onSuccess: () => { toast.success("Test deleted"); refresh(); }, onError });
 
-  return { addModule, deleteModule, addTopic, deleteTopic, saveTest, deleteTest };
+  return { addModule, updateModule, deleteModule, addTopic, updateTopic, deleteTopic, applyPoints, saveTest, deleteTest };
 }
 
 export function useCategoriesAdmin() {

@@ -10,6 +10,7 @@ export const createTopicSchema = z.object({
   moduleId: z.string().min(1),
   title: z.string().min(2),
   description: z.string().optional(),
+  points: z.coerce.number().int().min(0).optional(),
 });
 
 function filesArray(f: UploadedFile | UploadedFile[] | undefined): UploadedFile[] {
@@ -65,6 +66,7 @@ export const createTopic = asyncHandler(async (req: Request, res: Response) => {
     videoPublicId,
     timeDurationSec,
     resources,
+    points: req.body.points !== undefined ? Number(req.body.points) || 0 : 0,
   });
   module.topics.push(topic._id);
   await module.save();
@@ -80,6 +82,7 @@ export const updateTopic = asyncHandler(async (req: Request, res: Response) => {
   if (req.body.title !== undefined) topic.title = req.body.title;
   if (req.body.description !== undefined) topic.description = req.body.description;
   if (req.body.order !== undefined) topic.order = Number(req.body.order);
+  if (req.body.points !== undefined) topic.points = Number(req.body.points) || 0;
 
   const videoFile = req.files?.video as UploadedFile | undefined;
   if (videoFile) {

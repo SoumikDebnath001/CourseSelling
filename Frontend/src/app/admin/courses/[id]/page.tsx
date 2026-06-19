@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Plus, Trash2, Video, ClipboardCheck, Trophy, Upload, Award, Eye } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Video, ClipboardCheck, Trophy, Upload, Award, Eye, Layers, Sparkles } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { TestBuilder } from "@/components/admin/TestBuilder";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,8 @@ import {
   useCourseBuilderActions,
   useUpdateCourse,
 } from "@/hooks/useAdmin";
+import { useSettings } from "@/hooks/useSettings";
+import { LevelSlider } from "@/components/course/LevelSlider";
 import { generateCertificate } from "@/lib/certificate";
 import type { Course, Module, TestRef } from "@/types/api";
 
@@ -63,6 +65,8 @@ function Builder({ courseId }: { courseId: string }) {
             onAddTopic={(fd) => actions.addTopic.mutate(fd)}
             addingTopic={actions.addTopic.isPending}
             onDeleteTopic={(id) => { if (confirm("Delete topic?")) actions.deleteTopic.mutate(id); }}
+            onSaveModulePoints={(points) => actions.updateModule.mutate({ id: m._id, points })}
+            onSaveTopicPoints={(id, points) => actions.updateTopic.mutate({ id, points })}
             onEditTest={() => setTestTarget({ scope: "module", moduleId: m._id, existing: m.test })}
             onDeleteTest={() => { if (m.test && confirm("Delete module test?")) actions.deleteTest.mutate(m.test._id); }}
           />
@@ -79,6 +83,9 @@ function Builder({ courseId }: { courseId: string }) {
           <Plus className="h-4 w-4" /> Module
         </Button>
       </div>
+
+      {/* Bulk points */}
+      <BulkPointsCard onApply={(v) => actions.applyPoints.mutate(v)} applying={actions.applyPoints.isPending} />
 
       {/* Final test */}
       <div className="card mt-6 flex items-center justify-between p-4">
@@ -100,6 +107,9 @@ function Builder({ courseId }: { courseId: string }) {
           )}
         </div>
       </div>
+
+      {/* Type, level & points */}
+      <CourseSettingsCard course={course} />
 
       {/* Certificate */}
       <CertificateCard course={course} />
@@ -127,6 +137,8 @@ function ModuleCard({
   onAddTopic,
   addingTopic,
   onDeleteTopic,
+  onSaveModulePoints,
+  onSaveTopicPoints,
   onEditTest,
   onDeleteTest,
 }: {
@@ -135,6 +147,8 @@ function ModuleCard({
   onAddTopic: (fd: FormData) => void;
   addingTopic: boolean;
   onDeleteTopic: (id: string) => void;
+  onSaveModulePoints: (points: number) => void;
+  onSaveTopicPoints: (id: string, points: number) => void;
   onEditTest: () => void;
   onDeleteTest: () => void;
 }) {
@@ -145,6 +159,7 @@ function ModuleCard({
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-ink-900">{module.moduleName}</h3>
         <div className="flex items-center gap-1">
+          <PointsInline label="Module pts" value={module.points ?? 0} onSave={onSaveModulePoints} />
           <button onClick={onEditTest} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-ball-600 hover:bg-ball-50">
             <ClipboardCheck className="h-3.5 w-3.5" /> {module.test ? "Edit test" : "Add test"}
           </button>
@@ -162,7 +177,10 @@ function ModuleCard({
               <Video className="h-4 w-4 text-pitch-600" /> {t.title}
               {t.resources?.length > 0 && <span className="text-xs text-ink-400">· {t.resources.length} files</span>}
             </span>
-            <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
+            <span className="flex items-center gap-2">
+              <PointsInline label="pts" value={t.points ?? 0} onSave={(p) => onSaveTopicPoints(t._id, p)} />
+              <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
+            </span>
           </li>
         ))}
         {module.topics.length === 0 && <li className="px-3 py-2 text-xs text-ink-400">No topics yet.</li>}
@@ -220,6 +238,10 @@ function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: str
       <input name="title" required className="input" placeholder="Topic title" />
       <textarea name="description" className="input min-h-16" placeholder="Topic description (optional)" />
       <label className="block text-sm text-ink-600">
+        <span className="mb-1 font-medium">Points awarded on completion</span>
+        <input name="points" type="number" min={0} defaultValue={0} className="input" />
+      </label>
+      <label className="block text-sm text-ink-600">
         <span className="mb-1 flex items-center gap-1 font-medium"><Upload className="h-4 w-4" /> Video file</span>
         <input type="file" accept="video/*" onChange={(e) => setVideo(e.target.files?.[0] ?? null)} className="text-sm" />
       </label>
@@ -232,6 +254,135 @@ function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: str
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
     </form>
+  );
+}
+
+function CourseSettingsCard({ course }: { course: Course }) {
+  const update = useUpdateCourse(course._id);
+  const { settings } = useSettings();
+  const levels = [...settings.levels].sort((a, b) => a.order - b.order);
+
+  const entryKey = levels[0]?.key ?? "foundation";
+  const [courseType, setCourseType] = useState<Course["courseType"]>(course.courseType ?? "progressive");
+  const [level, setLevel] = useState(course.level ?? entryKey);
+  const [maxLevel, setMaxLevel] = useState(course.maxLevel || entryKey);
+  const [points, setPoints] = useState(course.points ?? 0);
+
+  const dirty =
+    courseType !== (course.courseType ?? "progressive") ||
+    level !== (course.level ?? entryKey) ||
+    maxLevel !== (course.maxLevel || entryKey) ||
+    points !== (course.points ?? 0);
+
+  const save = () => {
+    const fd = new FormData();
+    fd.append("courseType", courseType);
+    fd.append("level", level);
+    fd.append("maxLevel", maxLevel);
+    fd.append("points", String(points));
+    update.mutate(fd);
+  };
+
+  return (
+    <div className="card mt-6 p-4">
+      <div className="flex items-center gap-2">
+        <Layers className="h-5 w-5 text-brand-600" />
+        <div>
+          <p className="font-semibold text-ink-900">Type, level &amp; points</p>
+          <p className="text-xs text-ink-400">Where this course sits in the progression and the points it awards on completion.</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-ink-700">Course type</span>
+          <select value={courseType} onChange={(e) => setCourseType(e.target.value as Course["courseType"])} className="input">
+            <option value="progressive">Progressive (structured path)</option>
+            <option value="miscellaneous">Miscellaneous (standalone)</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-ink-700">Course points awarded</span>
+          <input type="number" min={0} value={points} onChange={(e) => setPoints(Number(e.target.value))} className="input" />
+        </label>
+      </div>
+      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div>
+          <span className="mb-1 block text-sm font-medium text-ink-700">Course level</span>
+          <LevelSlider levels={levels} value={level} onChange={setLevel} />
+        </div>
+        <div>
+          <span className="mb-1 block text-sm font-medium text-ink-700">Highest attainable level (progressive path)</span>
+          <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
+        </div>
+      </div>
+      <div className="mt-4">
+        <Button onClick={save} loading={update.isPending} disabled={!dirty}>Save</Button>
+      </div>
+    </div>
+  );
+}
+
+/** Apply one point value across the whole course, every module, or every topic at once. */
+function BulkPointsCard({ onApply, applying }: { onApply: (v: { coursePoints?: number; modulePoints?: number; topicPoints?: number }) => void; applying: boolean }) {
+  const [coursePoints, setCoursePoints] = useState("");
+  const [modulePoints, setModulePoints] = useState("");
+  const [topicPoints, setTopicPoints] = useState("");
+
+  const apply = () => {
+    const v: { coursePoints?: number; modulePoints?: number; topicPoints?: number } = {};
+    if (coursePoints !== "") v.coursePoints = Number(coursePoints);
+    if (modulePoints !== "") v.modulePoints = Number(modulePoints);
+    if (topicPoints !== "") v.topicPoints = Number(topicPoints);
+    if (Object.keys(v).length) onApply(v);
+  };
+
+  return (
+    <div className="card mt-4 p-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-grape-600" />
+        <div>
+          <p className="font-semibold text-ink-900">Apply points in bulk</p>
+          <p className="text-xs text-ink-400">Stamp the same value across all modules / topics. Leave a field blank to skip it. You can still fine-tune individual values above.</p>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-ink-600">Course points</span>
+          <input type="number" min={0} value={coursePoints} onChange={(e) => setCoursePoints(e.target.value)} className="input w-32" placeholder="—" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-ink-600">All modules</span>
+          <input type="number" min={0} value={modulePoints} onChange={(e) => setModulePoints(e.target.value)} className="input w-32" placeholder="—" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-ink-600">All topics</span>
+          <input type="number" min={0} value={topicPoints} onChange={(e) => setTopicPoints(e.target.value)} className="input w-32" placeholder="—" />
+        </label>
+        <Button onClick={apply} loading={applying}>Apply</Button>
+      </div>
+    </div>
+  );
+}
+
+/** Small inline points editor used on module headers and topic rows. */
+function PointsInline({ label, value, onSave }: { label: string; value: number; onSave: (points: number) => void }) {
+  const [v, setV] = useState(String(value));
+  const dirty = Number(v) !== value && v !== "";
+  return (
+    <span className="flex items-center gap-1 rounded-lg bg-ink-50 px-1.5 py-0.5">
+      <span className="text-[10px] font-semibold uppercase text-ink-400">{label}</span>
+      <input
+        type="number"
+        min={0}
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        className="w-12 rounded border border-ink-200 bg-white px-1 py-0.5 text-xs"
+      />
+      {dirty && (
+        <button onClick={() => onSave(Number(v))} className="text-[10px] font-bold text-pitch-600 hover:underline">save</button>
+      )}
+    </span>
   );
 }
 

@@ -3,10 +3,14 @@
 import { use } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Users, PlayCircle, BookOpen } from "lucide-react";
+import { CheckCircle2, Users, PlayCircle, BookOpen, Lock, Layers } from "lucide-react";
 import { useCourseBySlug } from "@/hooks/useCourses";
 import { useEnroll } from "@/hooks/useEnroll";
+import { useMyProgression } from "@/hooks/useProgression";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/store/auth";
+import { courseLocked, levelLabel, isEntryLevel, categoryId } from "@/lib/levels";
+import { formatKES } from "@/lib/currency";
 import { ModuleAccordion } from "@/components/course/ModuleAccordion";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -16,6 +20,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
   const router = useRouter();
   const { data, isLoading } = useCourseBySlug(slug);
   const enroll = useEnroll();
+  const { data: progression } = useMyProgression();
+  const { settings } = useSettings();
   const account = useAuth((s) => s.account);
 
   if (isLoading)
@@ -28,6 +34,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
   const { course, isEnrolled } = data;
   const topicCount = course.modules.reduce((n, m) => n + m.topics.length, 0);
+  const levels = settings.levels;
+  const requiredLevel = levelLabel(levels, course.level);
+  const hasLevelBadge = levels.length > 0 && !isEntryLevel(levels, course.level);
+  // Locked only for signed-in learners below the required level (admins bypass).
+  const locked = account?.kind === "user" && courseLocked(progression, course) && !isEnrolled;
+  const catId = categoryId(course.category);
+  const catProgress = progression?.categories.find((c) => c.category?._id === catId);
 
   const onEnrollClick = () => {
     if (!account) return router.push("/login");
@@ -88,10 +101,32 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
               )}
             </div>
             <div className="p-5">
-              <div className="text-2xl font-extrabold text-pitch-700">
-                {course.price > 0 ? `₹${course.price}` : "Free"}
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-extrabold text-pitch-700">{formatKES(course.price)}</div>
+                {hasLevelBadge && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sun-100 px-2.5 py-1 text-xs font-bold text-sun-700">
+                    <Layers className="h-3.5 w-3.5" /> {requiredLevel}
+                  </span>
+                )}
               </div>
-              {isEnrolled ? (
+              {(course.points ?? 0) > 0 && (
+                <p className="mt-1 text-sm font-semibold text-brand-600">Earn +{course.points} points on completion</p>
+              )}
+              {locked ? (
+                <div className="mt-4 rounded-xl border border-sun-200 bg-sun-50 p-4 text-center">
+                  <Lock className="mx-auto h-6 w-6 text-sun-600" />
+                  <p className="mt-2 text-sm font-bold text-ink-900">Locked — {requiredLevel} required</p>
+                  <p className="mt-1 text-xs text-ink-500">
+                    {catProgress
+                      ? `You're at ${catProgress.currentLevelName} in this category${
+                          catProgress.nextLevel
+                            ? ` — earn ${catProgress.pointsToNext} more point${catProgress.pointsToNext === 1 ? "" : "s"} and complete a ${catProgress.currentLevelName} course to advance.`
+                            : "."
+                        }`
+                      : "Complete previous levels and earn the required points to unlock this course."}
+                  </p>
+                </div>
+              ) : isEnrolled ? (
                 <Button className="mt-4 w-full py-2.5" onClick={() => router.push(`/learn/${course._id}`)}>
                   Go to course
                 </Button>

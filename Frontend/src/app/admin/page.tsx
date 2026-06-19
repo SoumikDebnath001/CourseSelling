@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Users, MessageSquare, ClipboardList, CheckCircle2, GraduationCap } from "lucide-react";
+import { BookOpen, Users, MessageSquare, ClipboardList, CheckCircle2, GraduationCap, Award, TrendingUp, Lock } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { useAdminDashboard } from "@/hooks/useAdmin";
+import { useAdminDashboard, useAdminAnalytics } from "@/hooks/useAdmin";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function AdminDashboardPage() {
@@ -48,8 +48,85 @@ export default function AdminDashboardPage() {
               <p className="px-4 py-6 text-sm text-ink-400">No courses yet.</p>
             )}
           </div>
+
+          <AnalyticsSection />
         </>
       )}
     </AdminShell>
+  );
+}
+
+function AnalyticsSection() {
+  const { data, isLoading } = useAdminAnalytics();
+  if (isLoading) return <div className="mt-8 flex justify-center"><Spinner className="h-6 w-6" /></div>;
+  if (!data) return null;
+
+  const headline = [
+    { label: "Points earned", value: data.totalPointsEarned, icon: TrendingUp },
+    { label: "Certificates issued", value: data.certificatesIssued, icon: Award },
+    { label: "Advanced learners", value: data.advancedLearners, icon: Users },
+    { label: "Entry-level learners", value: data.entryLevelLearners, icon: Lock },
+  ];
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-lg font-bold text-ink-900">Progression analytics</h2>
+
+      <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {headline.map(({ label, value, icon: Icon }) => (
+          <div key={label} className="card p-4">
+            <Icon className="h-5 w-5 text-grape-600" />
+            <p className="mt-2 text-2xl font-extrabold text-ink-900">{value}</p>
+            <p className="text-xs text-ink-400">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className="card p-4">
+          <h3 className="text-sm font-semibold text-ink-700">Users per level</h3>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {data.usersPerLevel.map((l) => (
+              <li key={l.level} className="flex items-center justify-between">
+                <span className="text-ink-600">{l.name}</span>
+                <span className="font-semibold text-ink-900">{l.count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="card p-4">
+          <h3 className="text-sm font-semibold text-ink-700">Most completed courses</h3>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {data.mostCompletedCourses.length ? (
+              data.mostCompletedCourses.map((c) => (
+                <li key={c.course} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-ink-600">{c.courseName}</span>
+                  <span className="font-semibold text-ink-900">{c.completions}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-ink-400">No completions yet.</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="card p-4">
+          <h3 className="text-sm font-semibold text-ink-700">Category progression</h3>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {data.categoryProgression.length ? (
+              data.categoryProgression.map((c, i) => (
+                <li key={c.category ?? i} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-ink-600">{c.categoryName}</span>
+                  <span className="text-ink-400">{c.learners} learners · {c.points} pts</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-ink-400">No data yet.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }

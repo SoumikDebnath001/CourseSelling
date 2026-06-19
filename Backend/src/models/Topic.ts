@@ -20,6 +20,8 @@ export interface ITopic extends Document {
   timeDurationSec?: number;
   resources: IResource[];
   commentCount: number;
+  /** Points awarded once when this topic is completed. */
+  points: number;
 }
 
 const resourceSchema = new Schema<IResource>(
@@ -44,6 +46,7 @@ const topicSchema = new Schema<ITopic>(
     timeDurationSec: { type: Number },
     resources: { type: [resourceSchema], default: [] },
     commentCount: { type: Number, default: 0 },
+    points: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

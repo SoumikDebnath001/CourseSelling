@@ -5,12 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { BookOpen, CheckCircle2, Home, LogOut, BadgeCheck, Globe, User, Receipt } from "lucide-react";
+import { BookOpen, CheckCircle2, Home, LogOut, BadgeCheck, Globe, User, Receipt, Award } from "lucide-react";
 import { useAuth } from "@/store/auth";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-export type DashView = "my" | "completed" | "profile" | "purchases";
+export type DashView = "my" | "completed" | "certifications" | "profile" | "purchases";
 
 export function DashboardSidebar({ view, setView }: { view: DashView; setView: (v: DashView) => void }) {
   const router = useRouter();
@@ -29,6 +29,7 @@ export function DashboardSidebar({ view, setView }: { view: DashView; setView: (
   const items: { key: DashView; label: string; icon: typeof BookOpen }[] = [
     { key: "my", label: "My courses", icon: BookOpen },
     { key: "completed", label: "Completed courses", icon: CheckCircle2 },
+    { key: "certifications", label: "Certifications", icon: Award },
     { key: "purchases", label: "Purchase history", icon: Receipt },
     { key: "profile", label: "My profile", icon: User },
   ];

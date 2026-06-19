@@ -7,6 +7,7 @@ import { Course } from "../models/Course";
 import { Module } from "../models/Module";
 import { CourseProgress } from "../models/CourseProgress";
 import { canAccessCourseContent } from "../utils/access";
+import { creditProgress } from "../utils/progression";
 import { sendMailAsync } from "../mail/mailSender";
 import { testResultEmail, coursePassedEmail } from "../mail/templates";
 
@@ -155,6 +156,8 @@ export const submitTest = asyncHandler(async (req: Request, res: Response) => {
       { $addToSet: { passedTests: test._id } },
       { upsert: true }
     );
+    // Passing a module/final test may complete the module or course → credit points.
+    await creditProgress(req.auth!.id, test.course);
   }
 
   // Emails: result always, plus a course-completed note when the FINAL test is passed.

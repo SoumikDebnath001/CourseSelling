@@ -9,6 +9,8 @@ export interface IModule extends Document {
   course: Types.ObjectId;
   topics: Types.ObjectId[];
   test?: Types.ObjectId | null;
+  /** Points awarded once when this module is completed. */
+  points: number;
 }
 
 const moduleSchema = new Schema<IModule>(
@@ -19,6 +21,7 @@ const moduleSchema = new Schema<IModule>(
     course: { type: Schema.Types.ObjectId, ref: "Ca_Course", required: true },
     topics: [{ type: Schema.Types.ObjectId, ref: "Ca_Topic" }],
     test: { type: Schema.Types.ObjectId, ref: "Ca_Test", default: null },
+    points: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

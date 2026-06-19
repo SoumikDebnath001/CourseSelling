@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import Hls from "hls.js";
 import { Download, FileText, LinkIcon, Check } from "lucide-react";
 import type { Topic } from "@/types/api";
 import { cn } from "@/lib/utils";
@@ -9,6 +11,41 @@ interface Props {
   completed: boolean;
   onComplete: () => void;
   completing?: boolean;
+}
+
+/**
+ * Plays a topic video. Cloudflare Stream delivers adaptive HLS (.m3u8): Safari plays it
+ * natively, other browsers need hls.js. Plain MP4/other URLs are set directly.
+ */
+function CourseVideo({ topic, onEnded }: { topic: Topic; onEnded: () => void }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const src = topic.videoUrl ?? "";
+
+  useEffect(() => {
+    const video = ref.current;
+    if (!video || !src) return;
+    const isHls = src.includes(".m3u8");
+    const nativeHls = video.canPlayType("application/vnd.apple.mpegurl");
+
+    if (isHls && !nativeHls && Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      return () => hls.destroy();
+    }
+    video.src = src;
+  }, [src]);
+
+  return (
+    <video
+      key={topic._id}
+      ref={ref}
+      controls
+      onEnded={onEnded}
+      className="h-full w-full"
+      controlsList="nodownload"
+    />
+  );
 }
 
 export function VideoPlayer({ topic, completed, onComplete, completing }: Props) {
@@ -21,14 +58,7 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
     <div>
       <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
         {topic.videoUrl ? (
-          <video
-            key={topic._id}
-            src={topic.videoUrl}
-            controls
-            onEnded={handleEnded}
-            className="h-full w-full"
-            controlsList="nodownload"
-          />
+          <CourseVideo topic={topic} onEnded={handleEnded} />
         ) : (
           <div className="flex h-full items-center justify-center text-ink-400">No video for this topic yet.</div>
         )}

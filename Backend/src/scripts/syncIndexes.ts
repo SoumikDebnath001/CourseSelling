@@ -21,6 +21,11 @@ import { Test } from "../models/Test";
 import { TestAttempt } from "../models/TestAttempt";
 import { RatingReview } from "../models/RatingReview";
 import { OnlinePlatformUser } from "../models/OnlinePlatformUser";
+import { UserCategoryProgress } from "../models/UserCategoryProgress";
+import { CertificateRecord } from "../models/CertificateRecord";
+import { ProgressionLog } from "../models/ProgressionLog";
+import { AdminOverrideLog } from "../models/AdminOverrideLog";
+import { CourseAccessGrant } from "../models/CourseAccessGrant";
 
 const ownedModels = [
   OnlinePlatformUser,
@@ -34,6 +39,11 @@ const ownedModels = [
   Test,
   TestAttempt,
   RatingReview,
+  UserCategoryProgress,
+  CertificateRecord,
+  ProgressionLog,
+  AdminOverrideLog,
+  CourseAccessGrant,
 ];
 
 async function main() {

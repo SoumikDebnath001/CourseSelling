@@ -6,11 +6,18 @@ import { api, apiError } from "@/lib/axios";
 import type { Settings } from "@/types/api";
 
 /** Sensible defaults so the UI renders before settings load / if the request fails. */
+export const DEFAULT_LEVELS = [
+  { key: "foundation", name: "Foundation", label: "Basic", description: "Basic learning stage focused on core concepts and fundamentals.", order: 0, unlockPoints: 0 },
+  { key: "level1", name: "Level 1", label: "Intermediate", description: "Intermediate learning stage focused on skill development and practical application.", order: 1, unlockPoints: 100 },
+  { key: "level2", name: "Level 2", label: "Professional", description: "Professional learning stage focused on advanced mastery and performance.", order: 2, unlockPoints: 500 },
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   platformName: "Cricket Academy",
   hero: {},
   foundation: {},
   watermark: { enabled: true, opacity: 0.04 },
+  levels: DEFAULT_LEVELS,
 };
 
 /** Public platform settings — branding, contact, hero copy, foundation links. */

@@ -6,6 +6,19 @@ export interface LoginResponse {
   account: AuthAccount;
 }
 
+/** One configurable progression level (see Settings.levels). */
+export interface LevelDef {
+  key: string;
+  name: string;
+  /** User-facing display label, e.g. "Basic" / "Intermediate" / "Professional". */
+  label?: string;
+  /** Informational description shown when the level is selected. */
+  description?: string;
+  order: number;
+  /** Cumulative per-category points needed to unlock this level. */
+  unlockPoints: number;
+}
+
 export interface Settings {
   platformName: string;
   email?: string;
@@ -26,6 +39,7 @@ export interface Settings {
     enabled: boolean;
     opacity: number;
   };
+  levels: LevelDef[];
 }
 
 export interface Category {
@@ -53,6 +67,7 @@ export interface Topic {
   timeDurationSec?: number;
   resources: Resource[];
   commentCount: number;
+  points?: number;
 }
 
 export interface TestRef {
@@ -73,7 +88,10 @@ export interface Module {
   order: number;
   topics: Topic[];
   test?: TestRef | null;
+  points?: number;
 }
+
+export type CourseType = "progressive" | "miscellaneous";
 
 export interface Course {
   _id: string;
@@ -90,6 +108,10 @@ export interface Course {
   finalTest?: TestRef | null;
   instructions: string[];
   certificateColor?: string;
+  courseType: CourseType;
+  level: string;
+  maxLevel?: string;
+  points: number;
   status: "Draft" | "Published";
   studentsEnrolledCount: number;
 }
@@ -105,13 +127,52 @@ export interface CourseCardData {
   studentsEnrolledCount?: number;
   createdByName?: string;
   category?: Category | string;
+  courseType?: CourseType;
+  level?: string;
+  maxLevel?: string;
+  points?: number;
 }
 
 export interface EnrolledCourse {
-  course: CourseCardData;
+  course: CourseCardData & { certificateColor?: string };
   totalTopics: number;
   completedTopics: number;
   percent: number;
+  /** True once the user has fully completed the course (certificate earned). */
+  completed?: boolean;
+}
+
+/** One category card on the dashboard progress section. */
+export interface CategoryProgress {
+  category: { _id: string; name: string; slug?: string; icon?: string } | null;
+  currentLevel: string;
+  currentLevelName: string;
+  points: number;
+  nextLevel: { key: string; name: string; unlockPoints: number } | null;
+  pointsToNext: number;
+  percent: number;
+  completedCourses: number;
+  completedModules: number;
+  completedTopics: number;
+}
+
+export interface Progression {
+  levels: LevelDef[];
+  categories: CategoryProgress[];
+  totalPoints: number;
+  coursesCompleted: number;
+  certificatesEarned: number;
+}
+
+export interface Certificate {
+  _id: string;
+  course: string;
+  category?: { _id: string; name: string; slug?: string } | null;
+  level: string;
+  courseName: string;
+  categoryName?: string;
+  certificateColor: string;
+  issuedAt: string;
 }
 
 export interface Transaction {

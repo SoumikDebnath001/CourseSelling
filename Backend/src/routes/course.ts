@@ -8,6 +8,7 @@ import {
   getCourseBySlug,
   listAdminCourses,
   getAdminCourse,
+  applyCoursePoints,
 } from "../controllers/course";
 import { courseReviews } from "../controllers/rating";
 import { getFullCourse } from "../controllers/enrollment";
@@ -26,6 +27,7 @@ router.get("/admin/:id", requireAuth, requireAdmin, getAdminCourse);
 router.post("/", requireAuth, requireAdmin, createCourse);
 router.put("/:id", requireAuth, requireAdmin, updateCourse);
 router.patch("/:id/status", requireAuth, requireAdmin, setCourseStatus);
+router.patch("/:id/points", requireAuth, requireAdmin, applyCoursePoints);
 router.delete("/:id", requireAuth, requireAdmin, deleteCourse);
 
 // Enrolled full content (student or admin)

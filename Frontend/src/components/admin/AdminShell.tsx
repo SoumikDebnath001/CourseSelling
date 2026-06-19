@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
-  { href: "/admin/categories", label: "Categories", icon: FolderTree },
-  { href: "/admin/students", label: "Members", icon: Users },
+  { href: "/admin/categories", label: "Paths", icon: FolderTree },
+  { href: "/admin/students", label: "Users", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

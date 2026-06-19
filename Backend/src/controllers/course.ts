@@ -15,9 +15,14 @@ export const createCourseSchema = z.object({
   whatYouWillLearn: z.string().optional(),
   price: z.coerce.number().min(0).default(0),
   tags: z.union([z.string(), z.array(z.string())]).optional(),
-  category: z.string().optional(),
+  /** Path / Category — mandatory: a course can never be created without one. */
+  category: z.string().min(1, "A Path / Category is required"),
   instructions: z.union([z.string(), z.array(z.string())]).optional(),
   certificateColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #4f46e5").optional(),
+  courseType: z.enum(["progressive", "miscellaneous"]).default("progressive"),
+  level: z.string().min(1).default("foundation"),
+  maxLevel: z.string().optional(),
+  points: z.coerce.number().int().min(0).default(0),
 });
 
 function toArray(v?: string | string[]): string[] {
@@ -37,6 +42,11 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
   const body = req.body as z.infer<typeof createCourseSchema>;
   const thumbFile = req.files?.thumbnail as UploadedFile | undefined;
 
+  // Mandatory Path / Category — no orphan courses allowed.
+  if (!body.category || !String(body.category).trim()) {
+    throw new ApiError(400, "A Path / Category is required to create a course");
+  }
+
   let thumbnail;
   if (thumbFile) {
     const up = await uploadFile(thumbFile, "thumbnails");
@@ -53,6 +63,10 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
     instructions: toArray(body.instructions),
     category: body.category || undefined,
     certificateColor: body.certificateColor || undefined,
+    courseType: body.courseType ?? "progressive",
+    level: body.level || "foundation",
+    maxLevel: body.maxLevel || undefined,
+    points: body.points ?? 0,
     thumbnail,
     createdByAdmin: req.auth!.id,
     createdByName: req.auth!.name,
@@ -79,10 +93,15 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   if (body.courseDescription !== undefined) course.courseDescription = body.courseDescription;
   if (body.whatYouWillLearn !== undefined) course.whatYouWillLearn = body.whatYouWillLearn;
   if (body.price !== undefined) course.price = Number(body.price);
-  if (body.category !== undefined) course.category = (body.category || undefined) as never;
+  // Never allow clearing the Path / Category (no orphan courses).
+  if (body.category) course.category = body.category as never;
   if (body.tags !== undefined) course.tags = toArray(body.tags);
   if (body.instructions !== undefined) course.instructions = toArray(body.instructions);
   if (body.certificateColor !== undefined) course.certificateColor = body.certificateColor;
+  if (body.courseType !== undefined) course.courseType = body.courseType;
+  if (body.level !== undefined) course.level = body.level;
+  if (body.maxLevel !== undefined) course.maxLevel = (body.maxLevel || undefined) as never;
+  if (body.points !== undefined) course.points = Number(body.points);
 
   await course.save();
   res.json({ success: true, course });
@@ -126,7 +145,7 @@ export const listCourses = asyncHandler(async (req: Request, res: Response) => {
   if (req.query.search) filter.courseName = { $regex: String(req.query.search), $options: "i" };
 
   const courses = await Course.find(filter)
-    .select("courseName slug courseDescription thumbnail price tags studentsEnrolledCount createdByName category")
+    .select("courseName slug courseDescription thumbnail price tags studentsEnrolledCount createdByName category courseType level maxLevel points")
     .populate("category", "name slug")
     .sort({ createdAt: -1 })
     .lean();
@@ -168,7 +187,8 @@ export const getCourseBySlug = asyncHandler(async (req: Request, res: Response) 
 /** Admin: list all courses (any status) for management. */
 export const listAdminCourses = asyncHandler(async (_req: Request, res: Response) => {
   const courses = await Course.find({})
-    .select("courseName slug status price thumbnail studentsEnrolledCount modules createdAt")
+    .select("courseName slug status price thumbnail studentsEnrolledCount modules createdAt category courseType level maxLevel points")
+    .populate("category", "name slug")
     .sort({ createdAt: -1 })
     .lean();
   res.json({ success: true, courses });
@@ -190,4 +210,33 @@ export const getAdminCourse = asyncHandler(async (req: Request, res: Response) =
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
   res.json({ success: true, course });
+});
+
+const applyPointsSchema = z.object({
+  coursePoints: z.coerce.number().int().min(0).optional(),
+  modulePoints: z.coerce.number().int().min(0).optional(),
+  topicPoints: z.coerce.number().int().min(0).optional(),
+});
+
+/**
+ * Admin: bulk-apply point values across a course. Sets the course's own points and/or
+ * stamps every module / topic with the same value. Admins can still fine-tune individual
+ * module/topic points afterwards via their normal update endpoints.
+ */
+export const applyCoursePoints = asyncHandler(async (req: Request, res: Response) => {
+  const course = await Course.findById(req.params.id);
+  if (!course) throw new ApiError(404, "Course not found");
+  const body = applyPointsSchema.parse(req.body);
+
+  if (body.coursePoints !== undefined) {
+    course.points = body.coursePoints;
+    await course.save();
+  }
+  if (body.modulePoints !== undefined) {
+    await Module.updateMany({ course: course._id }, { $set: { points: body.modulePoints } });
+  }
+  if (body.topicPoints !== undefined) {
+    await Topic.updateMany({ course: course._id }, { $set: { points: body.topicPoints } });
+  }
+  res.json({ success: true });
 });

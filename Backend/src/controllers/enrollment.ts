@@ -5,7 +5,9 @@ import { Module } from "../models/Module";
 import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { CourseProgress } from "../models/CourseProgress";
+import { CertificateRecord } from "../models/CertificateRecord";
 import { paymentProvider } from "../services/payment";
+import { isCourseUnlockedForUser } from "../utils/progression";
 import { signedVideoUrl } from "../utils/storage";
 import { sendMailAsync } from "../mail/mailSender";
 import { courseEnrollmentEmail } from "../mail/templates";
@@ -22,6 +24,13 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 
   const existing = await Enrollment.findOne({ userId, course: course._id, status: "active" });
   if (existing) return res.json({ success: true, message: "Already enrolled", enrollment: existing });
+
+  // Progression gate: a user can only enrol in courses unlocked for their category level
+  // (unless an admin has granted direct access).
+  const unlocked = await isCourseUnlockedForUser(userId, course);
+  if (!unlocked) {
+    throw new ApiError(403, "This course is locked. Complete previous levels and earn the required points to unlock it.");
+  }
 
   const intent = await paymentProvider.charge({ userId, courseId: course._id.toString(), amount: course.price });
   if (!intent.paid) throw new ApiError(402, "Payment required");
@@ -51,8 +60,16 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
 export const myEnrolledCourses = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.auth!.id;
   const enrollments = await Enrollment.find({ userId, status: "active" })
-    .populate({ path: "course", select: "courseName slug thumbnail courseDescription modules" })
+    .populate({
+      path: "course",
+      select: "courseName slug thumbnail courseDescription modules courseType level category certificateColor",
+      populate: { path: "category", select: "name slug" },
+    })
     .lean();
+
+  // Courses the user has fully completed (certificate earned) — drives Certifications.
+  const certs = await CertificateRecord.find({ userId }).select("course").lean();
+  const completedSet = new Set(certs.map((c) => c.course.toString()));
 
   const result = [];
   for (const e of enrollments) {
@@ -66,6 +83,7 @@ export const myEnrolledCourses = asyncHandler(async (req: Request, res: Response
       totalTopics,
       completedTopics: completed,
       percent: totalTopics ? Math.round((completed / totalTopics) * 100) : 0,
+      completed: completedSet.has(course._id.toString()),
     });
   }
   res.json({ success: true, courses: result });

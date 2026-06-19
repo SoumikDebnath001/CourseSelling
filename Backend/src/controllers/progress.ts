@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Topic } from "../models/Topic";
 import { CourseProgress } from "../models/CourseProgress";
+import { creditProgress } from "../utils/progression";
 
 /** Student: mark a topic complete (idempotent). */
 export const completeTopic = asyncHandler(async (req: Request, res: Response) => {
@@ -18,6 +19,9 @@ export const completeTopic = asyncHandler(async (req: Request, res: Response) =>
     { $addToSet: { completedTopics: topic._id } },
     { upsert: true, new: true }
   ).lean();
+
+  // Credit topic/module/course points to the course's category (idempotent).
+  await creditProgress(userId, courseId);
 
   res.json({ success: true, completedTopics: progress?.completedTopics?.map(String) ?? [] });
 });
