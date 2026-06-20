@@ -37,11 +37,29 @@ export interface Settings {
     youtubeUrl?: string;
     imageUrl?: string;
   };
+  footer: {
+    about?: string;
+  };
+  socials: {
+    whatsapp?: string;
+    instagram?: string;
+    facebook?: string;
+    youtube?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  footerLinks: FooterLinkGroup[];
   watermark: {
     enabled: boolean;
     opacity: number;
   };
   levels: LevelDef[];
+}
+
+/** A footer link column (e.g. Sitemap, Resources) edited from the admin panel. */
+export interface FooterLinkGroup {
+  title: string;
+  items: { label: string; href: string }[];
 }
 
 export interface Category {

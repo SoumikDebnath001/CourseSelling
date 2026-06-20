@@ -31,6 +31,21 @@ export interface ISettings extends Document {
     imageUrl?: string;
     imagePublicId?: string;
   };
+  /** Footer copy edited from the admin panel. */
+  footer: {
+    about?: string;
+  };
+  /** Social profile URLs rendered as animated icons in the footer. Empty = hidden. */
+  socials: {
+    whatsapp?: string;
+    instagram?: string;
+    facebook?: string;
+    youtube?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  /** Configurable footer link columns (e.g. Sitemap, Resources). */
+  footerLinks: { title: string; items: { label: string; href: string }[] }[];
   watermark: {
     enabled: boolean;
     opacity: number;
@@ -46,6 +61,41 @@ export interface ISettings extends Document {
 interface ISettingsModel extends Model<ISettings> {
   getSingleton(): Promise<ISettings>;
 }
+
+/** Default footer link columns, seeded so the footer reads well out of the box. */
+export const DEFAULT_FOOTER_LINKS = [
+  {
+    title: "Sitemap",
+    items: [
+      { label: "Programs", href: "/catalog" },
+      { label: "Events", href: "/about" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "Resources",
+    items: [
+      { label: "Donations", href: "/about" },
+      { label: "Blogs", href: "/about" },
+    ],
+  },
+];
+
+const footerLinkGroupSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    items: {
+      type: [
+        new Schema(
+          { label: { type: String, trim: true }, href: { type: String, trim: true } },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+  },
+  { _id: false }
+);
 
 const levelSchema = new Schema<LevelDef>(
   {
@@ -80,6 +130,18 @@ const settingsSchema = new Schema<ISettings>(
       imageUrl: { type: String, trim: true },
       imagePublicId: { type: String, trim: true },
     },
+    footer: {
+      about: { type: String, trim: true },
+    },
+    socials: {
+      whatsapp: { type: String, trim: true },
+      instagram: { type: String, trim: true },
+      facebook: { type: String, trim: true },
+      youtube: { type: String, trim: true },
+      twitter: { type: String, trim: true },
+      linkedin: { type: String, trim: true },
+    },
+    footerLinks: { type: [footerLinkGroupSchema], default: () => DEFAULT_FOOTER_LINKS.map((g) => ({ ...g })) },
     watermark: {
       enabled: { type: Boolean, default: true },
       opacity: { type: Number, default: 0.04, min: 0, max: 1 },
@@ -93,6 +155,12 @@ const settingsSchema = new Schema<ISettings>(
 settingsSchema.statics.getSingleton = async function (): Promise<ISettings> {
   const existing = await this.findOne();
   if (existing) {
+    // Backfill default footer columns for docs created before the field existed.
+    if (!existing.footerLinks || existing.footerLinks.length === 0) {
+      existing.footerLinks = DEFAULT_FOOTER_LINKS.map((g) => ({ ...g }));
+      existing.markModified("footerLinks");
+      await existing.save();
+    }
     // Backfill levels for docs created before the levels field existed.
     if (!existing.levels || existing.levels.length === 0) {
       existing.levels = DEFAULT_LEVELS.map((l) => ({ ...l }));

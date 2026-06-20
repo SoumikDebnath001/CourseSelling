@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useSpring, useTransform, MotionValue, useInView } from 'motion/react';
-import { useEffect, useRef, CSSProperties } from 'react';
+import { motion, useSpring, useTransform, MotionValue } from 'motion/react';
+import { useEffect, CSSProperties } from 'react';
 
 import './Counter.css';
 
@@ -50,25 +50,26 @@ function Digit({ place, value, height, digitStyle }: DigitProps) {
   const isDecimal = place === '.';
   const valueRoundedToPlace = isDecimal ? 0 : getValueRoundedToPlace(value, place as number);
   const animatedValue = useSpring(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-50px" });
 
+  // Drive the digit straight to its target. The spring still animates 0 → value
+  // (the count-up) on mount; gating this behind scroll visibility caused the
+  // reel to get stuck at 0 whenever it remounted while off-screen.
   useEffect(() => {
-    if (!isDecimal && inView) {
+    if (!isDecimal) {
       animatedValue.set(valueRoundedToPlace);
     }
-  }, [animatedValue, valueRoundedToPlace, isDecimal, inView]);
+  }, [animatedValue, valueRoundedToPlace, isDecimal]);
 
   if (isDecimal) {
     return (
-      <span ref={ref} className="counter-digit" style={{ height, ...digitStyle, width: 'fit-content' }}>
+      <span className="counter-digit" style={{ height, ...digitStyle, width: 'fit-content' }}>
         .
       </span>
     );
   }
 
   return (
-    <span ref={ref} className="counter-digit" style={{ height, ...digitStyle }}>
+    <span className="counter-digit" style={{ height, ...digitStyle }}>
       {Array.from({ length: 10 }, (_, i) => (
         <Number key={i} mv={animatedValue} number={i} height={height} />
       ))}

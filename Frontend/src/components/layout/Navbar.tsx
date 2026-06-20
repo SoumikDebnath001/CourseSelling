@@ -110,9 +110,9 @@ export function Navbar() {
       </nav>
 
       {/* ───────── Mobile Sidebar Overlay ───────── */}
-      <div 
+      <div
         ref={overlayRef}
-        className="fixed inset-0 z-40 bg-ink-900/40 backdrop-blur-sm invisible opacity-0 md:hidden"
+        className="fixed inset-0 z-[100] bg-ink-900/40 backdrop-blur-sm invisible opacity-0 md:hidden"
         onClick={() => setIsSidebarOpen(false)}
         aria-hidden="true"
       />
@@ -120,7 +120,7 @@ export function Navbar() {
       {/* ───────── Mobile Sidebar ───────── */}
       <div 
         ref={sidebarRef}
-        className="fixed top-0 right-0 z-50 h-[100dvh] w-64 sm:w-80 bg-white shadow-2xl translate-x-full md:hidden flex flex-col"
+        className="fixed top-0 right-0 z-[110] h-[100dvh] w-64 sm:w-80 bg-white shadow-2xl translate-x-full md:hidden flex flex-col"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-ink-100 bg-brand-50/30">
           <div className="flex items-center gap-2">
@@ -171,28 +171,3 @@ export function Navbar() {
   );
 }
 
-export function Footer() {
-  const { settings } = useSettings();
-  const { platformName, email, contactPhone, place } = settings;
-
-  return (
-    <footer className="border-t border-ink-200 bg-white">
-      <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-500">
-        <div className="flex items-center gap-2">
-          <Image src="/brand/ball.png" alt="" width={20} height={20} />
-          <span className="font-semibold text-ink-700">{platformName}</span>
-        </div>
-        {(email || contactPhone || place) && (
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-500">
-            {email && <a href={`mailto:${email}`} className="hover:text-brand-700">{email}</a>}
-            {contactPhone && <a href={`tel:${contactPhone}`} className="hover:text-brand-700">{contactPhone}</a>}
-            {place && <span>{place}</span>}
-          </div>
-        )}
-        <p className="mt-2 text-xs text-ink-400">
-          © {new Date().getFullYear()} {platformName}. Learn cricket, the right way.
-        </p>
-      </div>
-    </footer>
-  );
-}

@@ -86,6 +86,8 @@ export default function AdminSettingsPage() {
   const set = (patch: Partial<Settings>) => setForm((f) => ({ ...f!, ...patch }));
   const setHero = (patch: Partial<Settings["hero"]>) => setForm((f) => ({ ...f!, hero: { ...f!.hero, ...patch } }));
   const setFoundation = (patch: Partial<Settings["foundation"]>) => setForm((f) => ({ ...f!, foundation: { ...f!.foundation, ...patch } }));
+  const setFooter = (patch: Partial<Settings["footer"]>) => setForm((f) => ({ ...f!, footer: { ...f!.footer, ...patch } }));
+  const setSocials = (patch: Partial<Settings["socials"]>) => setForm((f) => ({ ...f!, socials: { ...f!.socials, ...patch } }));
   const setWatermark = (patch: Partial<Settings["watermark"]>) => setForm((f) => ({ ...f!, watermark: { ...f!.watermark, ...patch } }));
   const setLevels = (levels: LevelDef[]) => setForm((f) => ({ ...f!, levels }));
   const updateLevel = (i: number, patch: Partial<LevelDef>) =>
@@ -119,6 +121,30 @@ export default function AdminSettingsPage() {
           <Field label="Place / address">
             <input className="input" value={form.place ?? ""} onChange={(e) => set({ place: e.target.value })} />
           </Field>
+        </Section>
+
+        <Section
+          title="Footer & socials"
+          description="The 'About' blurb and social icons shown in the site footer. Contact details (email, phone, place) above power the footer's 'Get in touch'. Leave a social URL empty to hide that icon."
+        >
+          <Field label="About text" hint="short paragraph under the logo">
+            <textarea
+              className="input"
+              rows={4}
+              placeholder="Empowering the next generation through sport…"
+              value={form.footer?.about ?? ""}
+              onChange={(e) => setFooter({ about: e.target.value })}
+            />
+          </Field>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <LabeledInput label="WhatsApp URL" value={form.socials?.whatsapp ?? ""} onChange={(v) => setSocials({ whatsapp: v })} placeholder="https://wa.me/254700000000" />
+            <LabeledInput label="Instagram URL" value={form.socials?.instagram ?? ""} onChange={(v) => setSocials({ instagram: v })} placeholder="https://instagram.com/…" />
+            <LabeledInput label="Facebook URL" value={form.socials?.facebook ?? ""} onChange={(v) => setSocials({ facebook: v })} placeholder="https://facebook.com/…" />
+            <LabeledInput label="YouTube URL" value={form.socials?.youtube ?? ""} onChange={(v) => setSocials({ youtube: v })} placeholder="https://youtube.com/@…" />
+            <LabeledInput label="X / Twitter URL" value={form.socials?.twitter ?? ""} onChange={(v) => setSocials({ twitter: v })} placeholder="https://x.com/…" />
+            <LabeledInput label="LinkedIn URL" value={form.socials?.linkedin ?? ""} onChange={(v) => setSocials({ linkedin: v })} placeholder="https://linkedin.com/company/…" />
+          </div>
         </Section>
 
         <Section

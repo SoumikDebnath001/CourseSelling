@@ -29,6 +29,36 @@ export const settingsSchema = z.object({
       imageUrl: urlOrEmpty.optional(),
     })
     .optional(),
+  footer: z
+    .object({
+      about: z.string().trim().optional(),
+    })
+    .optional(),
+  socials: z
+    .object({
+      whatsapp: urlOrEmpty.optional(),
+      instagram: urlOrEmpty.optional(),
+      facebook: urlOrEmpty.optional(),
+      youtube: urlOrEmpty.optional(),
+      twitter: urlOrEmpty.optional(),
+      linkedin: urlOrEmpty.optional(),
+    })
+    .optional(),
+  footerLinks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1),
+        items: z
+          .array(
+            z.object({
+              label: z.string().trim().min(1),
+              href: z.string().trim().min(1),
+            })
+          )
+          .default([]),
+      })
+    )
+    .optional(),
   watermark: z
     .object({
       enabled: z.boolean().optional(),
@@ -81,6 +111,20 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
       if (body.foundation[k] !== undefined) settings.foundation[k] = body.foundation[k];
     }
     settings.markModified("foundation");
+  }
+  if (body.footer) {
+    if (body.footer.about !== undefined) settings.footer.about = body.footer.about;
+    settings.markModified("footer");
+  }
+  if (body.socials) {
+    for (const k of ["whatsapp", "instagram", "facebook", "youtube", "twitter", "linkedin"] as const) {
+      if (body.socials[k] !== undefined) settings.socials[k] = body.socials[k];
+    }
+    settings.markModified("socials");
+  }
+  if (body.footerLinks !== undefined) {
+    settings.footerLinks = body.footerLinks;
+    settings.markModified("footerLinks");
   }
   if (body.watermark) {
     if (body.watermark.enabled !== undefined) settings.watermark.enabled = body.watermark.enabled;

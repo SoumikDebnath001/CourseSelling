@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
@@ -16,9 +17,14 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { useAuth } from "@/store/auth";
 import Counter from "@/components/ui/Counter";
 
+/** 3D orbital centrepiece — WebGL, so load it client-side only. */
+const FoundationOrbit3D = dynamic(() => import("@/components/foundation/FoundationOrbit3D"), {
+  ssr: false,
+});
+
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/** Short benefit chips that float around the foundation logo. */
+/** Short benefit points listed below the foundation logo. */
 const BENEFITS = [
   {
     text: "Learn anytime",
@@ -26,7 +32,6 @@ const BENEFITS = [
     color: "text-brand-500",
     bg: "bg-brand-50",
     ring: "ring-brand-300",
-    depth: 25,
   },
   {
     text: "Self-paced drills",
@@ -34,7 +39,6 @@ const BENEFITS = [
     color: "text-sun-500",
     bg: "bg-sun-50",
     ring: "ring-sun-300",
-    depth: -20,
   },
   {
     text: "Coach feedback",
@@ -42,7 +46,6 @@ const BENEFITS = [
     color: "text-grape-500",
     bg: "bg-grape-50",
     ring: "ring-grape-300",
-    depth: 30,
   },
   {
     text: "Track progress",
@@ -50,7 +53,6 @@ const BENEFITS = [
     color: "text-brand-600",
     bg: "bg-brand-50",
     ring: "ring-brand-300",
-    depth: -35,
   },
   {
     text: "Match-ready skills",
@@ -58,7 +60,6 @@ const BENEFITS = [
     color: "text-ball-600",
     bg: "bg-red-50",
     ring: "ring-red-300",
-    depth: 15,
   },
 ];
 
@@ -83,9 +84,6 @@ export default function HomePage() {
   const cta = useCtaHover();
 
   const root = useRef<HTMLDivElement>(null);
-  const fContainerRef = useRef<HTMLDivElement>(null);
-  const fLogoRef = useRef<HTMLDivElement>(null);
-  const fCardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const hero = settings?.hero ?? {};
   const introVideo = hero.introVideoUrl;
@@ -93,59 +91,6 @@ export default function HomePage() {
   const foundationSite = settings?.foundation?.websiteUrl;
   const foundationVideo = settings?.foundation?.youtubeUrl;
   const foundationImage = settings?.foundation?.imageUrl;
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!fContainerRef.current) return;
-    const rect = fContainerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-
-    if (fLogoRef.current) {
-      gsap.to(fLogoRef.current, {
-        x: x * -15,
-        y: y * -15,
-        duration: 0.5,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    }
-
-    fCardRefs.current.forEach((card, index) => {
-      if (!card) return;
-      const b = BENEFITS[index];
-      if (!b) return;
-      gsap.to(card, {
-        x: x * b.depth,
-        y: y * b.depth,
-        duration: 0.5,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    });
-  };
-
-  const handleMouseLeave = () => {
-    if (fLogoRef.current) {
-      gsap.to(fLogoRef.current, {
-        x: 0,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    }
-
-    fCardRefs.current.forEach((card) => {
-      if (!card) return;
-      gsap.to(card, {
-        x: 0,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    });
-  };
 
   useGSAP(
     () => {
@@ -156,19 +101,6 @@ export default function HomePage() {
       gsap.from(".hero-ball", { scale: 0, opacity: 0, duration: 0.9, ease: "back.out(1.6)", delay: 0.2 });
       gsap.to(".orbit", { rotation: 360, repeat: -1, duration: 22, ease: "none" });
       gsap.to(".satellite", { rotation: -360, repeat: -1, duration: 22, ease: "none" });
-
-      // Continuous gentle floating animation for the cards
-      gsap.utils.toArray<HTMLElement>(".f-card-float").forEach((card, index) => {
-        gsap.to(card, {
-          y: "random(-10, 10)",
-          x: "random(-6, 6)",
-          rotation: "random(-3, 3)",
-          duration: 3 + index * 0.6,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
-      });
 
       // Scroll-triggered reveals for every section block.
       gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
@@ -200,7 +132,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-2 lg:gap-10 lg:py-16">
           <div className="text-center lg:text-left">
             <span className="hero-anim inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-              {hero.badge || "🏏 Online Cricket Academy"}
+              {hero.badge || "🏏 Obuya Grassroots E-Learning"}
             </span>
             <h1 className="hero-anim mt-4 text-4xl font-extrabold leading-tight text-ink-900 sm:text-5xl">
               {hero.title || (
@@ -227,15 +159,15 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="hero-anim mt-10 grid grid-cols-3 gap-4 sm:flex sm:justify-center sm:gap-12 lg:justify-start">
+            <div className="hero-anim mt-10 grid grid-cols-3 gap-2 sm:flex sm:justify-center sm:gap-12 lg:justify-start">
               {[
                 { value: 3000, suffix: "+", l: "Students" },
                 { value: 10, suffix: "+", l: "Years coaching" },
                 { value: 25, suffix: "+", l: "Pro mentors" },
               ].map((s) => (
-                <div key={s.l} className="flex flex-col items-center sm:items-start gap-1">
+                <div key={s.l} className="flex min-w-0 flex-col items-center sm:items-start gap-1">
                   <div className="flex items-center text-2xl font-extrabold text-ink-900 sm:text-3xl">
-                    <Counter value={s.value} fontSize={30} padding={0} gap={1} textColor="inherit" fontWeight="inherit" gradientHeight={0} />
+                    <Counter value={s.value} fontSize={30} padding={0} gap={1} horizontalPadding={0} textColor="inherit" fontWeight="inherit" gradientHeight={0} />
                     <span>{s.suffix}</span>
                   </div>
                   <p className="text-xs font-medium text-ink-500 uppercase tracking-wider">{s.l}</p>
@@ -308,76 +240,25 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Middle: massive orbit */}
-            <div className="flex w-full items-center justify-center py-4 lg:py-8">
-              <div 
-                ref={fContainerRef}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                className="relative mx-auto w-full max-w-[500px] sm:max-w-[700px] lg:max-w-[900px] aspect-square [--r:180px] sm:[--r:280px] lg:[--r:380px]"
-              >
-                {/* dashed orbit guide */}
-                <div 
-                  className="absolute rounded-full border border-dashed border-brand-200/60 pointer-events-none -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2" 
-                  style={{
-                    width: "calc(var(--r) * 2)",
-                    height: "calc(var(--r) * 2)",
-                  }}
-                />
+            {/* Middle: 3D cricket-gear icons orbiting the foundation logo */}
+            <div className="flex w-full flex-col items-center gap-8 py-2 lg:gap-12 lg:py-6">
+              <FoundationOrbit3D className="h-80 w-full max-w-2xl sm:h-[30rem]" />
 
-                {/* Massive background watermark logo */}
-                <div 
-                  className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 opacity-[0.15] flex items-center justify-center"
-                  style={{
-                    width: "calc(var(--r) * 2)",
-                    height: "calc(var(--r) * 2)",
-                  }}
-                >
-                  <Image src="/brand/logo.png" alt="" fill className="object-contain p-8" />
-                </div>
-
-                {/* Floating benefit glass cards */}
-                {BENEFITS.map((b, i) => {
-                  const angle = -Math.PI / 2 + i * (2 * Math.PI / 5);
-                  const cos = Math.cos(angle);
-                  const sin = Math.sin(angle);
-                  
-                  return (
-                    <div 
-                      key={b.text} 
-                      className="absolute -translate-x-1/2 -translate-y-1/2 p-2"
-                      style={{
-                        left: `calc(50% + ${cos.toFixed(4)} * var(--r))`,
-                        top: `calc(50% + ${sin.toFixed(4)} * var(--r))`,
-                        zIndex: 10 + i,
-                      }}
-                    >
-                      <div className="f-card-float">
-                        <div
-                          ref={(el) => { fCardRefs.current[i] = el; }}
-                          className={`flex items-center gap-3 sm:gap-4 rounded-[1.25rem] sm:rounded-[1.5rem] bg-white/80 backdrop-blur-md px-4 py-2.5 sm:px-6 sm:py-4 shadow-xl border border-white/80 ring-1 ${b.ring} transition-all duration-300 hover:scale-[1.08] hover:bg-white hover:shadow-2xl hover:border-brand-400 cursor-default select-none`}
-                        >
-                          <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${b.bg} shadow-md ring-1 ring-black/5`}>
-                            <b.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${b.color}`} />
-                          </div>
-                          <span className="text-xs sm:text-sm lg:text-base font-extrabold text-ink-800 tracking-wide whitespace-nowrap">
-                            {b.text}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* centre: foundation logo */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div 
-                    ref={fLogoRef}
-                    className="flex h-40 w-40 items-center justify-center rounded-full bg-white shadow-2xl ring-[8px] ring-brand-50 sm:h-56 sm:w-56 lg:h-72 lg:w-72 transition-transform duration-500 hover:scale-[1.03]"
+              {/* element points, listed below the logo */}
+              <div className="flex max-w-3xl flex-wrap items-center justify-center gap-3 sm:gap-4">
+                {BENEFITS.map((b) => (
+                  <div
+                    key={b.text}
+                    className={`flex items-center gap-2.5 rounded-full bg-white/80 px-4 py-2.5 shadow-md backdrop-blur-md border border-white/80 ring-1 ${b.ring}`}
                   >
-                    <Image src="/brand/logo.png" alt="Foundation" width={220} height={220} className="h-24 w-24 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44 pointer-events-none drop-shadow-sm" />
+                    <span className={`rounded-xl p-1.5 ${b.bg} ring-1 ring-black/5`}>
+                      <b.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${b.color}`} />
+                    </span>
+                    <span className="text-sm font-extrabold tracking-wide text-ink-800 whitespace-nowrap sm:text-base">
+                      {b.text}
+                    </span>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -440,7 +321,7 @@ export default function HomePage() {
       )}
 
       {/* ───────── Testimonial ───────── */}
-      <section className="reveal mx-auto max-w-4xl px-4 py-10 lg:py-14">
+      {/* <section className="reveal mx-auto max-w-4xl px-4 py-10 lg:py-14">
         <div className="relative overflow-hidden rounded-3xl bg-white p-6 text-center shadow-card sm:p-12 sm:text-left">
           <Quote className="mx-auto h-8 w-8 text-grape-300 sm:mx-0 sm:h-10 sm:w-10" />
           <p className="mt-4 text-base font-medium text-ink-800 sm:text-xl">
@@ -455,7 +336,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ───────── Join CTA (hidden once signed in) ───────── */}
       {!account && (

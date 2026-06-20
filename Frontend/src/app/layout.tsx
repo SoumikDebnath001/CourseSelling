@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Obuya Grassroots Foundation — Courses",
+  title: "Obuya Grassroots E-Learning",
   description: "Learn cricket from the academy: structured courses, videos, tests and coaching.",
   icons: { icon: "/brand/logo.png" },
 };

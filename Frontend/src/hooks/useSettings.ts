@@ -12,10 +12,32 @@ export const DEFAULT_LEVELS = [
   { key: "level2", name: "Level 2", label: "Professional", description: "Professional learning stage focused on advanced mastery and performance.", order: 2, unlockPoints: 500 },
 ];
 
+/** Footer columns shown until settings load / if the request fails. */
+export const DEFAULT_FOOTER_LINKS = [
+  {
+    title: "Sitemap",
+    items: [
+      { label: "Programs", href: "/catalog" },
+      { label: "Events", href: "/about" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "Resources",
+    items: [
+      { label: "Donations", href: "/about" },
+      { label: "Blogs", href: "/about" },
+    ],
+  },
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   platformName: "Cricket Academy",
   hero: {},
   foundation: {},
+  footer: {},
+  socials: {},
+  footerLinks: DEFAULT_FOOTER_LINKS,
   watermark: { enabled: true, opacity: 0.04 },
   levels: DEFAULT_LEVELS,
 };
@@ -34,6 +56,9 @@ export function useSettings() {
         ...s,
         hero: { ...s.hero },
         foundation: { ...s.foundation },
+        footer: { ...s.footer },
+        socials: { ...s.socials },
+        footerLinks: s.footerLinks?.length ? s.footerLinks : DEFAULT_FOOTER_LINKS,
         watermark: { ...DEFAULT_SETTINGS.watermark, ...s.watermark },
       } as Settings;
     },
