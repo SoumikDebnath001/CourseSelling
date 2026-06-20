@@ -3,7 +3,13 @@ import { z } from "zod";
 import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Settings } from "../models/Settings";
-import { uploadFile, deleteFile } from "../utils/storage";
+import { uploadFile, deleteFile, signedAssetUrl } from "../utils/storage";
+
+/** Replace stored intro-video / foundation-image URLs with fresh presigned ones, in place. */
+function signSettingsAssets(s: { hero?: { introVideoUrl?: string; introVideoPublicId?: string }; foundation?: { imageUrl?: string; imagePublicId?: string } }): void {
+  if (s.hero) s.hero.introVideoUrl = signedAssetUrl(s.hero.introVideoPublicId, s.hero.introVideoUrl);
+  if (s.foundation) s.foundation.imageUrl = signedAssetUrl(s.foundation.imagePublicId, s.foundation.imageUrl);
+}
 
 /** Accepts a URL or an empty string (so admins can clear a field). */
 const urlOrEmpty = z.string().trim().url().or(z.literal(""));
@@ -82,7 +88,8 @@ export const settingsSchema = z.object({
 
 /** Public: the current platform settings (creates defaults on first ever call). */
 export const getSettings = asyncHandler(async (_req: Request, res: Response) => {
-  const settings = await Settings.getSingleton();
+  const settings = (await Settings.getSingleton()).toObject();
+  signSettingsAssets(settings);
   res.json({ success: true, settings });
 });
 
@@ -133,7 +140,9 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   }
 
   await settings.save();
-  res.json({ success: true, settings });
+  const out = settings.toObject();
+  signSettingsAssets(out);
+  res.json({ success: true, settings: out });
 });
 
 /** Admin: upload (and replace) the intro video shown on the home page. */
@@ -150,7 +159,9 @@ export const uploadIntroVideo = asyncHandler(async (req: Request, res: Response)
   settings.markModified("hero");
   await settings.save();
 
-  res.json({ success: true, settings });
+  const out = settings.toObject();
+  signSettingsAssets(out);
+  res.json({ success: true, settings: out });
 });
 
 /** Admin: upload (and replace) the foundation image shown on the home page. */
@@ -167,5 +178,7 @@ export const uploadFoundationImage = asyncHandler(async (req: Request, res: Resp
   settings.markModified("foundation");
   await settings.save();
 
-  res.json({ success: true, settings });
+  const out = settings.toObject();
+  signSettingsAssets(out);
+  res.json({ success: true, settings: out });
 });

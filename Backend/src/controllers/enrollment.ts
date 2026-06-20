@@ -10,7 +10,7 @@ import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentAppli
 import { paymentProvider } from "../services/payment";
 import { isCourseUnlockedForUser, getLevels } from "../utils/progression";
 import { levelLabel } from "../config/levels";
-import { signedVideoUrl } from "../utils/storage";
+import { signThumbnail, signCourseAssets } from "../utils/storage";
 import { canAccessCourseContent } from "../utils/access";
 import { sendMailAsync } from "../mail/mailSender";
 import { courseEnrollmentEmail } from "../mail/templates";
@@ -76,8 +76,9 @@ export const myEnrolledCourses = asyncHandler(async (req: Request, res: Response
 
   const result = [];
   for (const e of enrollments) {
-    const course = e.course as unknown as { _id: string; courseName: string; slug: string; thumbnail?: unknown };
+    const course = e.course as unknown as { _id: string; courseName: string; slug: string; thumbnail?: { url?: string; publicId?: string } };
     if (!course) continue;
+    signThumbnail(course);
     const totalTopics = await Topic.countDocuments({ course: course._id });
     const progress = await CourseProgress.findOne({ userId, course: course._id }).lean();
     const completed = progress?.completedTopics?.length ?? 0;
@@ -143,15 +144,9 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(403, "Enrol in this course to access its content");
   }
 
-  // Swap stored CDN URLs for short-lived signed URLs so paid videos can't be
-  // shared. No-op (returns the plain CDN URL) until signing keys are configured.
-  type LeanTopic = { videoUrl?: string; videoPublicId?: string };
-  type LeanModule = { topics?: LeanTopic[] };
-  for (const m of (course.modules as unknown as LeanModule[]) ?? []) {
-    for (const t of m.topics ?? []) {
-      if (t.videoPublicId) t.videoUrl = signedVideoUrl(t.videoPublicId);
-    }
-  }
+  // Swap stored ids for short-lived signed URLs (thumbnail, file resources, and paid videos)
+  // so private R2 assets are reachable and paid videos can't be freely shared.
+  signCourseAssets(course as Parameters<typeof signCourseAssets>[0], { videos: true });
 
   const userId = req.auth!.id;
   const progress = await CourseProgress.findOne({ userId, course: course._id }).lean();

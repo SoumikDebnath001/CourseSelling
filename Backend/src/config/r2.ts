@@ -79,5 +79,34 @@ export async function r2DeleteObject(key: string): Promise<void> {
   }
 }
 
-/** Public URL for a stored object (R2 public bucket / custom domain). */
-export const r2PublicUrl = (key: string): string => `${env.R2_PUBLIC_URL}/${encodeKey(key)}`;
+/**
+ * Presigned GET URL for a PRIVATE object — SigV4 query-string signing. The bucket stays
+ * private; the browser fetches the object directly from R2 using this short-lived, signed
+ * link (default 6h). Range requests still work (host is the only signed header), so video
+ * seeking is unaffected. Must be regenerated on every read — never stored, since it expires.
+ */
+export function r2PresignGetUrl(key: string, expiresSeconds = 6 * 3600): string {
+  const host = r2Host();
+  const canonicalUri = `/${env.R2_BUCKET}/${encodeKey(key)}`;
+  const { amzdate, datestamp } = amzDate(new Date());
+  const scope = `${datestamp}/${REGION}/${SERVICE}/aws4_request`;
+
+  // Signature-bearing query params (X-Amz-Signature itself is appended after signing).
+  const params: Record<string, string> = {
+    "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+    "X-Amz-Credential": `${env.R2_ACCESS_KEY_ID}/${scope}`,
+    "X-Amz-Date": amzdate,
+    "X-Amz-Expires": String(expiresSeconds),
+    "X-Amz-SignedHeaders": "host",
+  };
+  const canonicalQuery = Object.keys(params)
+    .sort()
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .join("&");
+
+  const canonicalRequest = ["GET", canonicalUri, canonicalQuery, `host:${host}\n`, "host", "UNSIGNED-PAYLOAD"].join("\n");
+  const stringToSign = ["AWS4-HMAC-SHA256", amzdate, scope, sha256Hex(canonicalRequest)].join("\n");
+  const signature = hmac(signingKey(env.R2_SECRET_ACCESS_KEY!, datestamp), stringToSign).toString("hex");
+
+  return `https://${host}${canonicalUri}?${canonicalQuery}&X-Amz-Signature=${signature}`;
+}

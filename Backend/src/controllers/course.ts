@@ -7,7 +7,7 @@ import { Module } from "../models/Module";
 import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { uniqueSlug } from "../utils/slug";
-import { uploadFile, deleteFile } from "../utils/storage";
+import { uploadFile, deleteFile, signThumbnail, signCourseAssets } from "../utils/storage";
 import { getLevels } from "../utils/progression";
 import { levelsInRange } from "../config/levels";
 
@@ -105,7 +105,9 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
   await seedSections(course);
   await course.save();
 
-  res.status(201).json({ success: true, course });
+  const out = course.toObject();
+  signThumbnail(out);
+  res.status(201).json({ success: true, course: out });
 });
 
 /** Admin: update course fields / replace thumbnail. */
@@ -144,7 +146,9 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   }
 
   await course.save();
-  res.json({ success: true, course });
+  const out = course.toObject();
+  signThumbnail(out);
+  res.json({ success: true, course: out });
 });
 
 /** Admin: toggle whether a progressive course's section requires a physical assessment. */
@@ -203,6 +207,7 @@ export const listCourses = asyncHandler(async (req: Request, res: Response) => {
     .populate("category", "name slug")
     .sort({ createdAt: -1 })
     .lean();
+  courses.forEach(signThumbnail);
   res.json({ success: true, courses });
 });
 
@@ -231,6 +236,8 @@ export const getCourseBySlug = asyncHandler(async (req: Request, res: Response) 
     }
   }
 
+  signThumbnail(course as unknown as { thumbnail?: { url?: string; publicId?: string } });
+
   let isEnrolled = false;
   if (req.auth?.kind === "user") {
     isEnrolled = !!(await Enrollment.exists({ userId: req.auth.id, course: course._id, status: "active" }));
@@ -245,6 +252,7 @@ export const listAdminCourses = asyncHandler(async (_req: Request, res: Response
     .populate("category", "name slug")
     .sort({ createdAt: -1 })
     .lean();
+  courses.forEach(signThumbnail);
   res.json({ success: true, courses });
 });
 
@@ -264,6 +272,7 @@ export const getAdminCourse = asyncHandler(async (req: Request, res: Response) =
     .populate("sections.finalTest", "title scope isPublished questions")
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
+  signCourseAssets(course as Parameters<typeof signCourseAssets>[0], { videos: true });
   res.json({ success: true, course });
 });
 

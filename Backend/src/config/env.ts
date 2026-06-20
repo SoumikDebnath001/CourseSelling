@@ -24,7 +24,10 @@ const schema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().default("courseselling"),
-  /** Public base URL for the bucket (r2.dev or custom domain), no trailing slash. */
+  /**
+   * Optional/legacy. The bucket is served PRIVATELY via presigned GET URLs, so a public
+   * base URL is not required. Kept only for backward compatibility; no longer used to serve.
+   */
   R2_PUBLIC_URL: z.string().optional(),
 
   // ── Cloudflare Stream (course videos: HLS transcode + delivery) ──
@@ -62,13 +65,9 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-/** True when R2 file uploads (thumbnails, resources) can work. */
+/** True when R2 file uploads + presigned serving (thumbnails, resources) can work. */
 export const isR2Configured = Boolean(
-  env.R2_ACCOUNT_ID &&
-    env.R2_ACCESS_KEY_ID &&
-    env.R2_SECRET_ACCESS_KEY &&
-    env.R2_BUCKET &&
-    env.R2_PUBLIC_URL
+  env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET
 );
 
 /** True when Cloudflare Stream video uploads + playback can work. */
