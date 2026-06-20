@@ -6,9 +6,12 @@ import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { CourseProgress } from "../models/CourseProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
+import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
 import { paymentProvider } from "../services/payment";
-import { isCourseUnlockedForUser } from "../utils/progression";
+import { isCourseUnlockedForUser, getLevels } from "../utils/progression";
+import { levelLabel } from "../config/levels";
 import { signedVideoUrl } from "../utils/storage";
+import { canAccessCourseContent } from "../utils/access";
 import { sendMailAsync } from "../mail/mailSender";
 import { courseEnrollmentEmail } from "../mail/templates";
 
@@ -129,8 +132,16 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
       ],
     })
     .populate("finalTest", "title description scope passingScorePct timeLimitMins isPublished")
+    .populate("sections.finalTest", "title description scope passingScorePct timeLimitMins isPublished")
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
+
+  // Enforce access: only enrolled students (or admins) may pull full content,
+  // including the video URLs below. Without this, any logged-in user could read
+  // a paid course in full just by hitting this endpoint with its id.
+  if (!(await canAccessCourseContent(req.auth, course._id))) {
+    throw new ApiError(403, "Enrol in this course to access its content");
+  }
 
   // Swap stored CDN URLs for short-lived signed URLs so paid videos can't be
   // shared. No-op (returns the plain CDN URL) until signing keys are configured.
@@ -144,12 +155,76 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
 
   const userId = req.auth!.id;
   const progress = await CourseProgress.findOne({ userId, course: course._id }).lean();
+  const completedTopics = new Set((progress?.completedTopics ?? []).map(String));
+  const passedTests = new Set((progress?.passedTests ?? []).map(String));
+
+  const [certs, apps, levels] = await Promise.all([
+    CertificateRecord.find({ userId, course: course._id }).select("level").lean(),
+    PhysicalAssessmentApplication.find({ userId, course: course._id })
+      .select("level scope status whatsappCountryCode whatsappNumber")
+      .lean(),
+    getLevels(),
+  ]);
+  const certLevels = new Set(certs.map((c) => c.level));
+  const appByLevel = new Map(apps.map((a) => [a.level, a]));
+
+  // Per-module completion: a module with a published test is done when the test is passed;
+  // otherwise when all its topics are complete (mirrors creditProgress).
+  type PTest = { _id: unknown; isPublished?: boolean } | null;
+  type PMod = { _id: unknown; section?: string | null; test?: PTest; topics?: { _id: unknown }[] };
+  type PSection = { levelKey: string; order: number; requiresPhysicalAssessment: boolean; finalTest?: PTest };
+  const pmods = (course.modules as unknown as PMod[]) ?? [];
+  const moduleDone = (m: PMod): boolean => {
+    if (m.test && m.test.isPublished) return passedTests.has(String(m.test._id));
+    const ts = m.topics ?? [];
+    return ts.length > 0 && ts.every((t) => completedTopics.has(String(t._id)));
+  };
+
+  // Sequential section status for progressive courses (locked until the previous cert is earned).
+  let prevCertified = true;
+  const sectionStatus = [...((course.sections as unknown as PSection[]) ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .map((sec) => {
+      const secModules = pmods.filter((m) => m.section === sec.levelKey);
+      const modulesDone = secModules.length > 0 && secModules.every(moduleDone);
+      const ft = sec.finalTest;
+      const finalOk = !ft || !ft.isPublished || passedTests.has(String(ft._id));
+      const app = appByLevel.get(sec.levelKey) ?? null;
+      const physOk = !sec.requiresPhysicalAssessment || app?.status === "cert_approved";
+      const certificateEarned = certLevels.has(sec.levelKey);
+      const locked = !prevCertified;
+      prevCertified = certificateEarned;
+      return {
+        levelKey: sec.levelKey,
+        label: levelLabel(levels, sec.levelKey),
+        order: sec.order,
+        requiresPhysicalAssessment: sec.requiresPhysicalAssessment,
+        locked,
+        modulesDone,
+        finalOk,
+        complete: modulesDone && finalOk && physOk,
+        certificateEarned,
+        physicalAssessment: app
+          ? { status: app.status, whatsappCountryCode: app.whatsappCountryCode, whatsappNumber: app.whatsappNumber }
+          : null,
+      };
+    });
+
   res.json({
     success: true,
     course,
     progress: {
-      completedTopics: progress?.completedTopics?.map(String) ?? [],
-      passedTests: progress?.passedTests?.map(String) ?? [],
+      completedTopics: [...completedTopics],
+      passedTests: [...passedTests],
     },
+    sectionStatus,
+    certificateLevels: [...certLevels],
+    physicalAssessments: apps.map((a) => ({
+      level: a.level,
+      scope: a.scope,
+      status: a.status,
+      whatsappCountryCode: a.whatsappCountryCode,
+      whatsappNumber: a.whatsappNumber,
+    })),
   });
 });

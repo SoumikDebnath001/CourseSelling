@@ -26,6 +26,7 @@ import { CertificateRecord } from "../models/CertificateRecord";
 import { ProgressionLog } from "../models/ProgressionLog";
 import { AdminOverrideLog } from "../models/AdminOverrideLog";
 import { CourseAccessGrant } from "../models/CourseAccessGrant";
+import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
 
 const ownedModels = [
   OnlinePlatformUser,
@@ -44,6 +45,7 @@ const ownedModels = [
   ProgressionLog,
   AdminOverrideLog,
   CourseAccessGrant,
+  PhysicalAssessmentApplication,
 ];
 
 async function main() {

@@ -9,15 +9,18 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+    # Bind to loopback only: the API must be reached through the Nginx TLS proxy,
+    # never directly on the host's public interface.
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
 
   # ── Frontend (Next.js) ────────────────────────────────
   frontend:
     image: ${DOCKER_USERNAME}/courses-frontend:latest
     container_name: courses-frontend
     restart: unless-stopped
+    # Loopback only — public traffic terminates at Nginx (TLS) and is proxied in.
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - backend

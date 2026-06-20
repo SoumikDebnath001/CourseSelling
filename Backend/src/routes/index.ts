@@ -13,6 +13,7 @@ import ratingRoutes from "./rating";
 import adminRoutes from "./admin";
 import contactRoutes from "./contact";
 import settingsRoutes from "./settings";
+import physicalAssessmentRoutes from "./physicalAssessment";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/ratings", ratingRoutes);
 router.use("/admin", adminRoutes);
 router.use("/contact", contactRoutes);
 router.use("/settings", settingsRoutes);
+router.use("/physical-assessments", physicalAssessmentRoutes);
 
 export default router;

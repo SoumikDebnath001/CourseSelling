@@ -11,15 +11,34 @@ export const createModuleSchema = z.object({
   moduleName: z.string().min(2),
   description: z.string().optional(),
   points: z.coerce.number().int().min(0).optional(),
+  /** For progressive courses: the level key of the section this module belongs to. */
+  section: z.string().optional(),
 });
 
 export const createModule = asyncHandler(async (req: Request, res: Response) => {
-  const { courseId, moduleName, description, points } = req.body as z.infer<typeof createModuleSchema>;
+  const { courseId, moduleName, description, points, section } = req.body as z.infer<typeof createModuleSchema>;
   const course = await Course.findById(courseId);
   if (!course) throw new ApiError(404, "Course not found");
 
+  // Progressive courses require the module to be placed in one of the course's sections.
+  let sectionKey: string | null = null;
+  if (course.courseType === "progressive") {
+    if (!section) throw new ApiError(400, "A section is required for progressive courses");
+    if (!course.sections.some((s) => s.levelKey === section)) {
+      throw new ApiError(400, "Unknown section for this course");
+    }
+    sectionKey = section;
+  }
+
   const order = course.modules.length;
-  const module = await Module.create({ course: course._id, moduleName, description, order, points: points ?? 0 });
+  const module = await Module.create({
+    course: course._id,
+    moduleName,
+    description,
+    order,
+    points: points ?? 0,
+    section: sectionKey,
+  });
   course.modules.push(module._id);
   await course.save();
 

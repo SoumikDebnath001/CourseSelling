@@ -2,14 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/store/auth";
 import { useSettings } from "@/hooks/useSettings";
 
 /** Top bar with brand, account name, and logout — used across dashboard/admin shells. */
-export function AccountBar({ home = "/dashboard" }: { home?: string }) {
+export function AccountBar({ 
+  home = "/dashboard",
+  hideLogout = false,
+  onMenuClick
+}: { 
+  home?: string;
+  hideLogout?: boolean;
+  onMenuClick?: () => void;
+}) {
   const router = useRouter();
   const account = useAuth((s) => s.account);
   const clearAuth = useAuth((s) => s.clearAuth);
@@ -37,9 +45,20 @@ export function AccountBar({ home = "/dashboard" }: { home?: string }) {
               </span>
             </span>
           )}
-          <button onClick={logout} className="btn-ghost px-3 py-1.5 text-sm">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
+          {!hideLogout && (
+            <button onClick={logout} className="btn-ghost px-3 py-1.5 text-sm">
+              <LogOut className="h-4 w-4" /> Logout
+            </button>
+          )}
+          {onMenuClick && (
+            <button 
+              onClick={onMenuClick} 
+              className="p-1.5 sm:hidden text-ink-600 bg-ink-50 hover:text-brand-600 hover:bg-ink-100 rounded-md transition-colors focus:outline-none"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

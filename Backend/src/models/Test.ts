@@ -13,9 +13,11 @@ export interface ITest extends Document {
   _id: Types.ObjectId;
   title: string;
   description?: string;
-  scope: "module" | "course";
+  scope: "module" | "course" | "section";
   course: Types.ObjectId;
   module?: Types.ObjectId | null;
+  /** For section-final tests (scope "section"): the section's level key. */
+  section?: string | null;
   questions: IQuestion[];
   passingScorePct: number;
   timeLimitMins?: number;
@@ -41,9 +43,10 @@ const testSchema = new Schema<ITest>(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String },
-    scope: { type: String, enum: ["module", "course"], required: true },
+    scope: { type: String, enum: ["module", "course", "section"], required: true },
     course: { type: Schema.Types.ObjectId, ref: "Ca_Course", required: true },
     module: { type: Schema.Types.ObjectId, ref: "Ca_Module", default: null },
+    section: { type: String, default: null },
     questions: { type: [questionSchema], default: [] },
     passingScorePct: { type: Number, default: 60, min: 0, max: 100 },
     timeLimitMins: { type: Number },

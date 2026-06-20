@@ -18,11 +18,18 @@ export interface ISettings extends Document {
     title?: string;
     highlight?: string;
     subtitle?: string;
+    /** Optional YouTube URL (legacy fallback). */
     videoUrl?: string;
+    /** Uploaded intro video shown in the "See the academy in action" band (CDN url + key). */
+    introVideoUrl?: string;
+    introVideoPublicId?: string;
   };
   foundation: {
     websiteUrl?: string;
     youtubeUrl?: string;
+    /** Uploaded foundation image shown on the home page (CDN url + storage key). */
+    imageUrl?: string;
+    imagePublicId?: string;
   };
   watermark: {
     enabled: boolean;
@@ -64,10 +71,14 @@ const settingsSchema = new Schema<ISettings>(
       highlight: { type: String, trim: true },
       subtitle: { type: String, trim: true },
       videoUrl: { type: String, trim: true },
+      introVideoUrl: { type: String, trim: true },
+      introVideoPublicId: { type: String, trim: true },
     },
     foundation: {
       websiteUrl: { type: String, trim: true },
       youtubeUrl: { type: String, trim: true },
+      imageUrl: { type: String, trim: true },
+      imagePublicId: { type: String, trim: true },
     },
     watermark: {
       enabled: { type: Boolean, default: true },

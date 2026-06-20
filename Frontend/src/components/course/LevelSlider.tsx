@@ -4,9 +4,8 @@ import type { LevelDef } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 /**
- * Animated segmented slider for picking a level. Renders an ordered track with a thumb
- * that smoothly transitions between stops, clickable level labels, and (optionally) the
- * selected level's informational description box.
+ * Animated segmented slider (glass toggle) for picking a level. 
+ * Renders an iOS-style segmented control with a sliding active indicator.
  */
 export function LevelSlider({
   levels,
@@ -22,61 +21,49 @@ export function LevelSlider({
   const sorted = [...levels].sort((a, b) => a.order - b.order);
   const count = sorted.length;
   const idx = Math.max(0, sorted.findIndex((l) => l.key === value));
-  const pct = count > 1 ? (idx / (count - 1)) * 100 : 0;
   const active = sorted[idx];
 
   return (
-    <div>
-      <div className="relative px-1 pt-2">
-        {/* Track */}
-        <div className="h-2 rounded-full bg-ink-100" />
-        {/* Filled portion */}
-        <div
-          className="absolute left-1 top-2 h-2 rounded-full bg-gradient-to-r from-brand-500 to-grape-500 transition-all duration-300 ease-out"
-          style={{ width: `calc(${pct}% )`, maxWidth: "calc(100% - 0.5rem)" }}
+    <div className="flex flex-col gap-3">
+      {/* Glass Segmented Toggle */}
+      <div className="relative flex w-full p-1.5 rounded-2xl bg-ink-200/50 backdrop-blur-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)]">
+        
+        {/* Sliding active background indicator */}
+        <div 
+          className="absolute top-1.5 bottom-1.5 rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] border border-white transition-all duration-300 ease-out"
+          style={{ 
+            width: `calc((100% - 12px) / ${count})`, 
+            left: `calc(6px + (100% - 12px) / ${count} * ${idx})` 
+          }}
         />
-        {/* Stops */}
-        <div className="absolute inset-x-1 top-2 flex -translate-y-0 justify-between">
-          {sorted.map((l, i) => (
+
+        {/* Buttons */}
+        {sorted.map((l) => {
+          const isActive = l.key === value;
+          return (
             <button
               key={l.key}
               type="button"
               aria-label={l.label || l.name}
               onClick={() => onChange(l.key)}
               className={cn(
-                "relative -mt-1 h-4 w-4 rounded-full border-2 transition-all duration-300",
-                i <= idx ? "border-grape-500 bg-white" : "border-ink-200 bg-white"
+                "relative z-10 flex-1 flex items-center justify-center py-2.5 px-2 rounded-xl transition-colors duration-200",
+                isActive ? "text-brand-700" : "text-ink-500 hover:text-ink-800"
               )}
-            />
-          ))}
-        </div>
-        {/* Thumb */}
-        <div
-          className="pointer-events-none absolute top-2 h-5 w-5 -translate-x-1/2 -translate-y-0.5 rounded-full bg-grape-600 shadow ring-2 ring-white transition-all duration-300 ease-out"
-          style={{ left: `calc(0.25rem + (100% - 0.5rem) * ${pct / 100})` }}
-        />
+            >
+              <span className="text-xs sm:text-sm font-bold tracking-tight">{l.label || l.name}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Labels */}
-      <div className="mt-3 flex justify-between text-xs font-medium">
-        {sorted.map((l) => (
-          <button
-            key={l.key}
-            type="button"
-            onClick={() => onChange(l.key)}
-            className={cn("text-center transition-colors", l.key === value ? "font-bold text-grape-700" : "text-ink-400 hover:text-ink-600")}
-          >
-            {l.label || l.name}
-          </button>
-        ))}
-      </div>
-
+      {/* Optional Description Box */}
       {showDescription && active && (
-        <div className="mt-3 rounded-xl border border-grape-100 bg-grape-50/60 p-3">
-          <p className="text-sm font-bold text-grape-800">
-            {active.name} <span className="font-normal text-grape-500">· {active.label || active.name}</span>
+        <div className="mt-2 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
+          <p className="text-sm font-extrabold text-brand-900">
+            {active.name} <span className="font-medium text-brand-600/80 ml-1">· {active.label || active.name}</span>
           </p>
-          {active.description && <p className="mt-0.5 text-xs text-ink-600">{active.description}</p>}
+          {active.description && <p className="mt-1 text-xs leading-relaxed text-ink-600">{active.description}</p>}
         </div>
       )}
     </div>

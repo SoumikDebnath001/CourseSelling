@@ -10,12 +10,14 @@ import { UserCategoryProgress, IUserCategoryProgress } from "../models/UserCateg
 import { CertificateRecord } from "../models/CertificateRecord";
 import { ProgressionLog } from "../models/ProgressionLog";
 import { CourseAccessGrant } from "../models/CourseAccessGrant";
+import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
 import {
   DEFAULT_LEVELS,
   LevelDef,
   computeLevel,
   courseUnlocked,
   entryLevel,
+  levelLabel,
   levelOrder,
 } from "../config/levels";
 
@@ -58,7 +60,7 @@ export async function creditProgress(
   courseId: string | Types.ObjectId
 ): Promise<void> {
   const course = await Course.findById(courseId)
-    .select("category level points finalTest courseName certificateColor")
+    .select("category level maxLevel points finalTest courseName certificateColor courseType requiresPhysicalAssessment sections")
     .lean();
   if (!course || !course.category) return; // uncategorised courses are not part of progression
 
@@ -67,7 +69,7 @@ export async function creditProgress(
   const passedTestIds = new Set((cp?.passedTests ?? []).map(String));
 
   const [modules, topics] = await Promise.all([
-    Module.find({ course: course._id }).select("points test").lean(),
+    Module.find({ course: course._id }).select("points test section").lean(),
     Topic.find({ course: course._id }).select("points module").lean(),
   ]);
 
@@ -89,21 +91,24 @@ export async function creditProgress(
     }
   }
 
-  // 2) Modules — "module test only" rule: a module WITH a published test is credited when
-  //    that test is passed; a module WITHOUT a published test is credited when all its
-  //    topics are complete.
-  const moduleTestIds = modules.map((m) => m.test).filter(Boolean) as Types.ObjectId[];
+  // 2) Modules — "module test only" rule: a module WITH a published test is "done" when
+  //    that test is passed; a module WITHOUT a published test is "done" when all its topics
+  //    are complete. Compute a done-map once (reused for section completion below).
+  const allTestIds = [
+    ...modules.map((m) => m.test),
+    ...(course.sections ?? []).map((s) => s.finalTest),
+  ].filter(Boolean) as Types.ObjectId[];
   const publishedTestSet = new Set<string>();
-  if (moduleTestIds.length) {
-    const published = await Test.find({ _id: { $in: moduleTestIds }, isPublished: true })
+  if (allTestIds.length) {
+    const published = await Test.find({ _id: { $in: allTestIds }, isPublished: true })
       .select("_id")
       .lean();
     published.forEach((t) => publishedTestSet.add(String(t._id)));
   }
 
+  const moduleDone = new Map<string, boolean>();
   for (const m of modules) {
     const id = String(m._id);
-    if (creditedModules.has(id)) continue;
     let done = false;
     if (m.test && publishedTestSet.has(String(m.test))) {
       done = passedTestIds.has(String(m.test));
@@ -111,7 +116,8 @@ export async function creditProgress(
       const mTopics = topics.filter((t) => String(t.module) === id);
       done = mTopics.length > 0 && mTopics.every((t) => completedTopicIds.has(String(t._id)));
     }
-    if (done) {
+    moduleDone.set(id, done);
+    if (done && !creditedModules.has(id)) {
       prog.completedModules.push(m._id);
       creditedModules.add(id);
       if (m.points > 0) prog.points += m.points;
@@ -119,30 +125,20 @@ export async function creditProgress(
     }
   }
 
-  // 3) Course completion — all topics done AND a published final test (if any) passed.
-  const totalTopics = topics.length;
-  const allTopicsDone = totalTopics > 0 && topics.every((t) => completedTopicIds.has(String(t._id)));
-  let finalOk = true;
-  if (course.finalTest) {
-    const ft = await Test.findById(course.finalTest).select("isPublished").lean();
-    if (ft?.isPublished) finalOk = passedTestIds.has(String(course.finalTest));
-  }
+  const levels = await getLevels();
+  const cat = await Category.findById(course.category).select("name").lean();
 
-  if (allTopicsDone && finalOk && !creditedCourses.has(String(course._id))) {
-    prog.completedCourses.push(course._id);
-    creditedCourses.add(String(course._id));
-    if (course.points > 0) prog.points += course.points;
-    logs.push({ userId, category: course.category, type: "course", points: course.points ?? 0, ref: course._id });
-
-    const cat = await Category.findById(course.category).select("name").lean();
+  // Upsert a certificate for one (course, level) and link it to the category progress doc.
+  const issueCertificate = async (lvlKey: string) => {
     const cert = await CertificateRecord.findOneAndUpdate(
-      { userId, course: course._id },
+      { userId, course: course._id, level: lvlKey },
       {
         $setOnInsert: {
           userId,
           course: course._id,
           category: course.category,
-          level: course.level,
+          level: lvlKey,
+          label: levelLabel(levels, lvlKey),
           courseName: course.courseName,
           categoryName: cat?.name,
           certificateColor: course.certificateColor,
@@ -153,10 +149,74 @@ export async function creditProgress(
     if (cert && !prog.earnedCertificates.some((c) => c.equals(cert._id))) {
       prog.earnedCertificates.push(cert._id);
     }
+  };
+
+  // Award course points + mark the course completed (for category level-ups). Once only.
+  const completeCourse = () => {
+    if (creditedCourses.has(String(course._id))) return;
+    prog.completedCourses.push(course._id);
+    creditedCourses.add(String(course._id));
+    if (course.points > 0) prog.points += course.points;
+    logs.push({ userId, category: course.category, type: "course", points: course.points ?? 0, ref: course._id });
+  };
+
+  // 3) Certificates.
+  if (course.courseType === "progressive" && (course.sections?.length ?? 0) > 0) {
+    // One certificate per SECTION/level, issued sequentially. A section is complete when all
+    // its modules are done AND its published final test (if any) is passed AND (if flagged) a
+    // cert-approved physical assessment exists. Later sections stay locked until earlier certs.
+    const sorted = [...course.sections].sort((a, b) => a.order - b.order);
+    const existingCerts = await CertificateRecord.find({ userId, course: course._id }).select("level").lean();
+    const certLevels = new Set(existingCerts.map((c) => c.level));
+    const apps = await PhysicalAssessmentApplication.find({ userId, course: course._id })
+      .select("level status")
+      .lean();
+    const certApproved = new Set(apps.filter((a) => a.status === "cert_approved").map((a) => a.level));
+
+    for (const sec of sorted) {
+      const secModules = modules.filter((m) => m.section === sec.levelKey);
+      const modulesDone = secModules.length > 0 && secModules.every((m) => moduleDone.get(String(m._id)));
+      let finalOk = true;
+      if (sec.finalTest && publishedTestSet.has(String(sec.finalTest))) {
+        finalOk = passedTestIds.has(String(sec.finalTest));
+      }
+      const physOk = !sec.requiresPhysicalAssessment || certApproved.has(sec.levelKey);
+      const complete = modulesDone && finalOk && physOk;
+
+      if (complete && !certLevels.has(sec.levelKey)) {
+        await issueCertificate(sec.levelKey);
+        certLevels.add(sec.levelKey);
+      }
+      // Sequential gate: stop evaluating once a section is not yet certified.
+      if (!certLevels.has(sec.levelKey)) break;
+    }
+
+    if (course.sections.every((s) => certLevels.has(s.levelKey))) completeCourse();
+  } else {
+    // Miscellaneous / non-sectioned: a single course certificate. Gated by all topics done +
+    // published final test passed (+ a cert-approved physical assessment when required).
+    const totalTopics = topics.length;
+    const allTopicsDone = totalTopics > 0 && topics.every((t) => completedTopicIds.has(String(t._id)));
+    let finalOk = true;
+    if (course.finalTest) {
+      const ft = await Test.findById(course.finalTest).select("isPublished").lean();
+      if (ft?.isPublished) finalOk = passedTestIds.has(String(course.finalTest));
+    }
+    let physOk = true;
+    if (course.requiresPhysicalAssessment) {
+      const app = await PhysicalAssessmentApplication.findOne({ userId, course: course._id, scope: "course" })
+        .select("status")
+        .lean();
+      physOk = app?.status === "cert_approved";
+    }
+
+    if (allTopicsDone && finalOk && physOk && !creditedCourses.has(String(course._id))) {
+      completeCourse();
+      await issueCertificate(course.level);
+    }
   }
 
   // 4) Recompute the unlocked level from cumulative category points + completed levels.
-  const levels = await getLevels();
   const newLevel = computeLevel(levels, prog.points, await completedLevelKeys(prog));
   if (newLevel !== prog.currentLevel) {
     logs.push({

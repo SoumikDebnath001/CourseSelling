@@ -44,6 +44,7 @@ export function AuthExperience() {
   const submitRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (password.length > 30) return toast.error("Password must be at most 30 characters");
     if (password !== confirmPassword) return toast.error("Passwords do not match");
     actions.register.mutate(
       { name, email, password },
@@ -163,6 +164,7 @@ export function AuthExperience() {
                     placeholder="Password"
                     value={password}
                     onChange={setPassword}
+                    maxLength={72}
                     trailing={
                       <button type="button" onClick={() => setShowPw((v) => !v)} className="text-ink-400">
                         {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -206,9 +208,10 @@ export function AuthExperience() {
                   <IconInput
                     icon={Lock}
                     type={showPw ? "text" : "password"}
-                    placeholder="Password (min 6 chars)"
+                    placeholder="Password (6–30 chars)"
                     value={password}
                     onChange={setPassword}
+                    maxLength={30}
                     trailing={
                       <button type="button" onClick={() => setShowPw((v) => !v)} className="text-ink-400">
                         {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

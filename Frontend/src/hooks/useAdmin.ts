@@ -230,9 +230,15 @@ export function useCourseBuilderActions(courseId: string) {
   const onError = (e: unknown) => toast.error(apiError(e));
 
   const addModule = useMutation({
-    mutationFn: (vars: { moduleName: string; description?: string; points?: number }) =>
+    mutationFn: (vars: { moduleName: string; description?: string; points?: number; section?: string }) =>
       api.post("/modules", { ...vars, courseId }),
     onSuccess: () => { toast.success("Module added"); refresh(); },
+    onError,
+  });
+  const updateSection = useMutation({
+    mutationFn: (vars: { levelKey: string; requiresPhysicalAssessment: boolean }) =>
+      api.patch(`/courses/${courseId}/sections/${vars.levelKey}`, { requiresPhysicalAssessment: vars.requiresPhysicalAssessment }),
+    onSuccess: () => { toast.success("Section updated"); refresh(); },
     onError,
   });
   const updateModule = useMutation({
@@ -275,7 +281,38 @@ export function useCourseBuilderActions(courseId: string) {
   });
   const deleteTest = useMutation({ mutationFn: (id: string) => api.delete(`/tests/${id}`), onSuccess: () => { toast.success("Test deleted"); refresh(); }, onError });
 
-  return { addModule, updateModule, deleteModule, addTopic, updateTopic, deleteTopic, applyPoints, saveTest, deleteTest };
+  return { addModule, updateSection, updateModule, deleteModule, addTopic, updateTopic, deleteTopic, applyPoints, saveTest, deleteTest };
+}
+
+/* ── Physical assessment applications ────────────────── */
+export function usePhysicalAssessmentApplications(filter: "pending" | "approved") {
+  return useQuery({
+    queryKey: ["physical-assessments", filter],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/physical-assessments", { params: { filter } });
+      return data.applications as import("@/types/api").PhysicalAssessmentApplication[];
+    },
+  });
+}
+
+function useApprovalMutation(path: (id: string) => string, success: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(path(id)),
+    onSuccess: () => {
+      toast.success(success);
+      qc.invalidateQueries({ queryKey: ["physical-assessments"] });
+      qc.invalidateQueries({ queryKey: ["admin-students"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+export function useApproveForTest() {
+  return useApprovalMutation((id) => `/admin/physical-assessments/${id}/approve-test`, "Approved for test");
+}
+export function useApproveForCertificate() {
+  return useApprovalMutation((id) => `/admin/physical-assessments/${id}/approve-certificate`, "Approved for certificate");
 }
 
 export function useCategoriesAdmin() {

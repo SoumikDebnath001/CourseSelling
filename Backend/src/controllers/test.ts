@@ -22,9 +22,11 @@ const questionSchema = z.object({
 export const upsertTestSchema = z.object({
   title: z.string().min(2),
   description: z.string().optional(),
-  scope: z.enum(["module", "course"]),
+  scope: z.enum(["module", "course", "section"]),
   courseId: z.string().min(1),
   moduleId: z.string().optional(),
+  /** Required when scope is "section": the section's level key. */
+  section: z.string().optional(),
   questions: z.array(questionSchema).default([]),
   passingScorePct: z.number().min(0).max(100).default(60),
   timeLimitMins: z.number().int().positive().optional(),
@@ -41,23 +43,36 @@ export const createTest = asyncHandler(async (req: Request, res: Response) => {
     if (q.correctOption >= q.options.length) throw new ApiError(400, "correctOption out of range");
   }
 
+  if (body.scope === "section") {
+    if (!body.section) throw new ApiError(400, "A section is required for a section test");
+    if (!course.sections.some((s) => s.levelKey === body.section)) {
+      throw new ApiError(400, "Unknown section for this course");
+    }
+  }
+
   const test = await Test.create({
     title: body.title,
     description: body.description,
     scope: body.scope,
     course: course._id,
     module: body.scope === "module" ? body.moduleId : null,
+    section: body.scope === "section" ? body.section : null,
     questions: body.questions,
     passingScorePct: body.passingScorePct,
     timeLimitMins: body.timeLimitMins,
     isPublished: body.isPublished,
   });
 
-  // Link the test to its owner (module.test or course.finalTest).
+  // Link the test to its owner (module.test, course.finalTest, or a section's finalTest).
   if (body.scope === "module" && body.moduleId) {
     await Module.updateOne({ _id: body.moduleId }, { $set: { test: test._id } });
   } else if (body.scope === "course") {
     await Course.updateOne({ _id: course._id }, { $set: { finalTest: test._id } });
+  } else if (body.scope === "section" && body.section) {
+    await Course.updateOne(
+      { _id: course._id, "sections.levelKey": body.section },
+      { $set: { "sections.$.finalTest": test._id } }
+    );
   }
 
   res.status(201).json({ success: true, test });
@@ -190,6 +205,11 @@ export const deleteTest = asyncHandler(async (req: Request, res: Response) => {
     await Module.updateOne({ _id: test.module }, { $set: { test: null } });
   } else if (test.scope === "course") {
     await Course.updateOne({ _id: test.course }, { $set: { finalTest: null } });
+  } else if (test.scope === "section" && test.section) {
+    await Course.updateOne(
+      { _id: test.course, "sections.levelKey": test.section },
+      { $set: { "sections.$.finalTest": null } }
+    );
   }
   await TestAttempt.deleteMany({ test: test._id });
   await test.deleteOne();

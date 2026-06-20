@@ -58,6 +58,42 @@ export function useUpdateSettings() {
   });
 }
 
+/** Admin: upload (and replace) the home-page intro video. */
+export function useUploadIntroVideo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("video", file);
+      const { data } = await api.post<{ settings: Settings }>("/settings/intro-video", fd);
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Intro video updated");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Admin: upload (and replace) the foundation image shown on the home page. */
+export function useUploadFoundationImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("image", file);
+      const { data } = await api.post<{ settings: Settings }>("/settings/foundation-image", fd);
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Foundation image updated");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
 /** Turn a YouTube URL (watch, youtu.be, or embed) into an embeddable URL. */
 export function youtubeEmbedUrl(url?: string): string | null {
   if (!url) return null;

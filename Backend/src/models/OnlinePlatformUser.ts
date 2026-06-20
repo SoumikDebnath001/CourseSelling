@@ -17,6 +17,8 @@ export interface IOnlinePlatformUser extends Document {
   otpHash?: string;
   otpExpiry?: Date;
   otpPurpose?: "verify" | "login";
+  /** Failed OTP verification attempts for the current code; resets on each new OTP. */
+  otpAttempts?: number;
 }
 
 const schema = new Schema<IOnlinePlatformUser>(
@@ -28,6 +30,7 @@ const schema = new Schema<IOnlinePlatformUser>(
     otpHash: { type: String, select: false },
     otpExpiry: { type: Date, select: false },
     otpPurpose: { type: String, enum: ["verify", "login"], select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
   },
   { timestamps: true }
 );

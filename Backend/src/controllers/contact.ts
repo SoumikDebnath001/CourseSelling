@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { mailSender } from "../mail/mailSender";
 import { baseLayout } from "../mail/templates/baseLayout";
 import { env } from "../config/env";
+import { escapeHtml } from "../utils/escapeHtml";
 
 export const contactSchema = z.object({
   name: z.string().min(2),
@@ -18,9 +19,10 @@ export const contactSchema = z.object({
  */
 export const submitContact = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, subject, message } = req.body as z.infer<typeof contactSchema>;
+  // Escape every user-supplied value before it lands in the HTML email body.
   const html = baseLayout({
-    title: `New enquiry: ${subject}`,
-    body: `<p><strong>From:</strong> ${name} (${email})</p><p>${message.replace(/\n/g, "<br>")}</p>`,
+    title: `New enquiry: ${escapeHtml(subject)}`,
+    body: `<p><strong>From:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</p><p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>`,
   });
   const to = env.MAIL_USER || env.MAIL_FROM;
   await mailSender(to, `[Courses] ${subject}`, html);

@@ -15,16 +15,21 @@ interface QDraft {
 
 interface Props {
   courseId: string;
-  scope: "module" | "course";
+  scope: "module" | "course" | "section";
   moduleId?: string;
+  /** Level key when scope is "section". */
+  section?: string;
   existing?: TestRef | null;
   saving?: boolean;
   onSave: (payload: Record<string, unknown>, id?: string) => void;
   onClose: () => void;
 }
 
-export function TestBuilder({ courseId, scope, moduleId, existing, saving, onSave, onClose }: Props) {
-  const [title, setTitle] = useState(existing?.title ?? (scope === "course" ? "Final course test" : "Module test"));
+const heading = (scope: Props["scope"]) =>
+  scope === "course" ? "Final course test" : scope === "section" ? "Section final test" : "Module test";
+
+export function TestBuilder({ courseId, scope, moduleId, section, existing, saving, onSave, onClose }: Props) {
+  const [title, setTitle] = useState(existing?.title ?? heading(scope));
   const [passingScorePct, setPassing] = useState(existing?.passingScorePct ?? 60);
   const [isPublished, setPublished] = useState(existing?.isPublished ?? true);
   const [questions, setQuestions] = useState<QDraft[]>(
@@ -47,6 +52,7 @@ export function TestBuilder({ courseId, scope, moduleId, existing, saving, onSav
         scope,
         courseId,
         moduleId: scope === "module" ? moduleId : undefined,
+        section: scope === "section" ? section : undefined,
         questions: cleaned,
         passingScorePct,
         isPublished,
@@ -59,7 +65,7 @@ export function TestBuilder({ courseId, scope, moduleId, existing, saving, onSav
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
       <div className="my-8 w-full max-w-2xl rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-ink-200 px-6 py-4">
-          <h2 className="text-lg font-bold text-ink-900">{scope === "course" ? "Final course test" : "Module test"}</h2>
+          <h2 className="text-lg font-bold text-ink-900">{heading(scope)}</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700"><X className="h-5 w-5" /></button>
         </div>
 

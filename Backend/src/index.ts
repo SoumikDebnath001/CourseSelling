@@ -3,14 +3,25 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
+import helmet from "helmet";
 
 import { env } from "./config/env";
 import { connectDB } from "./config/db";
 import { logStorageStatus } from "./utils/storage";
 import { notFound, errorHandler } from "./middleware/error";
+import { apiLimiter } from "./middleware/rateLimit";
 import apiRoutes from "./routes";
 
 const app = express();
+
+// Behind Nginx the real client IP is in X-Forwarded-For. Trust exactly one proxy
+// hop so rate limiters key on the true address (and not Nginx's loopback IP).
+app.set("trust proxy", 1);
+
+// Secure HTTP response headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
+// This is a JSON API, so the restrictive defaults are a good fit; CSP is enforced
+// at the edge/Next.js layer where the HTML is served.
+app.use(helmet());
 
 // Allow the configured client URL plus its www/apex counterpart, so both
 // https://courses.example.org and https://www.courses.example.org work.
@@ -60,7 +71,7 @@ app.get("/api/v1/health", (_req, res) => {
 });
 
 // ── Routes ───────────────────────────────────────────────
-app.use("/api/v1", apiRoutes);
+app.use("/api/v1", apiLimiter, apiRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -20,13 +20,13 @@ export function Watermark() {
   const opacity = settings.watermark.opacity ?? 0.04;
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden">
       <Image
         src="/brand/logo.png"
         alt=""
         width={900}
         height={900}
-        className="absolute left-1/2 top-1/2 w-[70vmin] max-w-none -translate-x-1/2 -translate-y-1/2"
+        className="w-[70vmin] max-w-none"
         style={{ opacity }}
         priority
       />

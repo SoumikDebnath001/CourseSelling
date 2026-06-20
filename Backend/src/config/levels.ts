@@ -108,3 +108,17 @@ export function computeLevel(
 export function courseUnlocked(levels: LevelDef[], currentLevelKey: string, courseLevelKey: string): boolean {
   return levelOrder(levels, courseLevelKey) <= levelOrder(levels, currentLevelKey);
 }
+
+/**
+ * The ordered, inclusive list of levels between `fromKey` and `toKey`. Used to derive the
+ * sections of a progressive course from its level → maxLevel range. If `toKey` is missing or
+ * below `fromKey`, returns just the `fromKey` level.
+ */
+export function levelsInRange(levels: LevelDef[], fromKey: string, toKey?: string): LevelDef[] {
+  const sorted = sortLevels(levels);
+  const fromOrder = levelOrder(levels, fromKey);
+  const toOrder = toKey ? levelOrder(levels, toKey) : fromOrder;
+  const lo = Math.min(fromOrder, toOrder);
+  const hi = Math.max(fromOrder, toOrder);
+  return sorted.filter((l) => l.order >= lo && l.order <= hi);
+}

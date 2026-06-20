@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { asyncHandler } from "../utils/asyncHandler";
+import type { UploadedFile } from "express-fileupload";
+import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Settings } from "../models/Settings";
+import { uploadFile, deleteFile } from "../utils/storage";
 
 /** Accepts a URL or an empty string (so admins can clear a field). */
 const urlOrEmpty = z.string().trim().url().or(z.literal(""));
@@ -24,6 +26,7 @@ export const settingsSchema = z.object({
     .object({
       websiteUrl: urlOrEmpty.optional(),
       youtubeUrl: urlOrEmpty.optional(),
+      imageUrl: urlOrEmpty.optional(),
     })
     .optional(),
   watermark: z
@@ -74,7 +77,7 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
     settings.markModified("hero");
   }
   if (body.foundation) {
-    for (const k of ["websiteUrl", "youtubeUrl"] as const) {
+    for (const k of ["websiteUrl", "youtubeUrl", "imageUrl"] as const) {
       if (body.foundation[k] !== undefined) settings.foundation[k] = body.foundation[k];
     }
     settings.markModified("foundation");
@@ -86,5 +89,39 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   }
 
   await settings.save();
+  res.json({ success: true, settings });
+});
+
+/** Admin: upload (and replace) the intro video shown on the home page. */
+export const uploadIntroVideo = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.files?.video as UploadedFile | undefined;
+  if (!file) throw new ApiError(400, "No video file provided");
+
+  const settings = await Settings.getSingleton();
+  await deleteFile(settings.hero?.introVideoPublicId);
+
+  const up = await uploadFile(file, "intro");
+  settings.hero.introVideoUrl = up.url;
+  settings.hero.introVideoPublicId = up.key;
+  settings.markModified("hero");
+  await settings.save();
+
+  res.json({ success: true, settings });
+});
+
+/** Admin: upload (and replace) the foundation image shown on the home page. */
+export const uploadFoundationImage = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.files?.image as UploadedFile | undefined;
+  if (!file) throw new ApiError(400, "No image file provided");
+
+  const settings = await Settings.getSingleton();
+  await deleteFile(settings.foundation?.imagePublicId);
+
+  const up = await uploadFile(file, "foundation");
+  settings.foundation.imageUrl = up.url;
+  settings.foundation.imagePublicId = up.key;
+  settings.markModified("foundation");
+  await settings.save();
+
   res.json({ success: true, settings });
 });

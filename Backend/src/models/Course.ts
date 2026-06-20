@@ -3,6 +3,22 @@ import { ownedModel } from "../utils/ownedModel";
 
 export type CourseType = "progressive" | "miscellaneous";
 
+/**
+ * One auto-generated section of a progressive course. There is exactly one section per
+ * level in the course's `level → maxLevel` range (e.g. Basic / Intermediate / Advanced).
+ * Sections are seeded from the level config and are not freely editable by admins — they
+ * only fill modules, set a section-final test, and toggle the physical-assessment gate.
+ */
+export interface ICourseSection {
+  /** Level key this section maps to (see Settings.levels). */
+  levelKey: string;
+  order: number;
+  /** When true, a passed offline physical assessment is required for this section's certificate. */
+  requiresPhysicalAssessment: boolean;
+  /** Optional section-final test (Test with scope "section"). */
+  finalTest?: Types.ObjectId | null;
+}
+
 export interface ICourse extends Document {
   _id: Types.ObjectId;
   courseName: string;
@@ -32,6 +48,14 @@ export interface ICourse extends Document {
   maxLevel?: string;
   /** Points awarded once when a user fully completes this course. */
   points: number;
+  /**
+   * For non-sectioned (miscellaneous) courses: when true the single certificate is gated
+   * behind a passed offline physical assessment. (Progressive courses use the per-section
+   * flag on `sections` instead.)
+   */
+  requiresPhysicalAssessment: boolean;
+  /** Auto-seeded sections (progressive courses only). Empty for miscellaneous courses. */
+  sections: ICourseSection[];
   status: "Draft" | "Published";
   studentsEnrolledCount: number;
 }
@@ -56,6 +80,21 @@ const courseSchema = new Schema<ICourse>(
     level: { type: String, default: "foundation" },
     maxLevel: { type: String },
     points: { type: Number, default: 0, min: 0 },
+    requiresPhysicalAssessment: { type: Boolean, default: false },
+    sections: {
+      type: [
+        new Schema<ICourseSection>(
+          {
+            levelKey: { type: String, required: true },
+            order: { type: Number, default: 0 },
+            requiresPhysicalAssessment: { type: Boolean, default: false },
+            finalTest: { type: Schema.Types.ObjectId, ref: "Ca_Test", default: null },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
     status: { type: String, enum: ["Draft", "Published"], default: "Draft" },
     studentsEnrolledCount: { type: Number, default: 0 },
   },

@@ -7,6 +7,8 @@ export interface IModule extends Document {
   description?: string;
   order: number;
   course: Types.ObjectId;
+  /** For progressive courses: the level key of the section this module belongs to. Null otherwise. */
+  section?: string | null;
   topics: Types.ObjectId[];
   test?: Types.ObjectId | null;
   /** Points awarded once when this module is completed. */
@@ -19,6 +21,7 @@ const moduleSchema = new Schema<IModule>(
     description: { type: String },
     order: { type: Number, default: 0 },
     course: { type: Schema.Types.ObjectId, ref: "Ca_Course", required: true },
+    section: { type: String, default: null },
     topics: [{ type: Schema.Types.ObjectId, ref: "Ca_Topic" }],
     test: { type: Schema.Types.ObjectId, ref: "Ca_Test", default: null },
     points: { type: Number, default: 0, min: 0 },

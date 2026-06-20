@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BookOpen, CheckCircle2, BadgeCheck, Globe, Mail, User as UserIcon, Receipt, Download, Award, Trophy, Layers, ChevronLeft, ChevronRight, Target } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, BadgeCheck, Globe, Mail, User as UserIcon, Receipt, Download, Award, Trophy, Layers, ChevronLeft, ChevronRight, Target, X } from "lucide-react";
+import { gsap } from "gsap";
+import { AccountBar } from "@/components/layout/AccountBar";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { DashboardSidebar, type DashView } from "@/components/dashboard/DashboardSidebar";
 import { useMyEnrolledCourses, useMyTransactions } from "@/hooks/useLearn";
@@ -22,6 +24,34 @@ function DashboardInner() {
   const completed = (courses ?? []).filter((c) => c.percent >= 100);
   const inProgress = (courses ?? []).filter((c) => c.percent < 100);
   const shown = view === "completed" ? completed : inProgress;
+
+  // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Close sidebar on escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  // GSAP animation for mobile sidebar slide-in
+  useEffect(() => {
+    if (isSidebarOpen) {
+      gsap.to(overlayRef.current, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
+      gsap.to(sidebarRef.current, { x: 0, duration: 0.4, ease: "power3.out" });
+      document.body.style.overflow = "hidden"; 
+    } else {
+      gsap.to(overlayRef.current, { autoAlpha: 0, duration: 0.3, ease: "power2.in" });
+      gsap.to(sidebarRef.current, { x: "-100%", duration: 0.4, ease: "power3.in" });
+      document.body.style.overflow = ""; 
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [isSidebarOpen]);
 
   const heading =
     view === "completed"
@@ -45,9 +75,14 @@ function DashboardInner() {
             : "Keep going where you left off.";
 
   return (
-    <div className="min-h-screen bg-ink-50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row">
-        <DashboardSidebar view={view} setView={setView} />
+    <div className="min-h-screen bg-ink-50 flex flex-col relative">
+      <AccountBar home="/dashboard" hideLogout={true} onMenuClick={() => setIsSidebarOpen(true)} />
+      
+      <div className="mx-auto flex w-full max-w-6xl gap-6 px-4 py-6 flex-1">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block w-72 shrink-0">
+          <DashboardSidebar view={view} setView={setView} />
+        </div>
 
         <main className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-ink-900">{heading}</h1>
@@ -74,6 +109,41 @@ function DashboardInner() {
             </>
           )}
         </main>
+      </div>
+
+      {/* ───────── Mobile Sidebar Overlay ───────── */}
+      <div 
+        ref={overlayRef}
+        className="fixed inset-0 z-[60] bg-ink-900/40 backdrop-blur-sm invisible opacity-0 lg:hidden"
+        onClick={() => setIsSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* ───────── Mobile Sidebar ───────── */}
+      <div 
+        ref={sidebarRef}
+        className="fixed top-0 left-0 z-[70] h-[100dvh] w-80 bg-ink-50 shadow-2xl -translate-x-full lg:hidden flex flex-col"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-ink-200 bg-white">
+          <span className="font-extrabold text-ink-900">Dashboard Menu</span>
+          <button 
+            className="p-2 text-ink-500 hover:text-brand-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 pb-8">
+          <DashboardSidebar 
+            view={view} 
+            setView={(v) => {
+              setView(v);
+              setIsSidebarOpen(false);
+            }} 
+          />
+        </div>
       </div>
     </div>
   );

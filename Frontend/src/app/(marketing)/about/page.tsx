@@ -1,4 +1,4 @@
-export const metadata = { title: "About — Cricket Academy" };
+export const metadata = { title: "About — Obuya Grassroots Foundation" };
 
 export default function AboutPage() {
   return (

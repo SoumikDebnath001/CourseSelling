@@ -8,6 +8,32 @@ import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { uniqueSlug } from "../utils/slug";
 import { uploadFile, deleteFile } from "../utils/storage";
+import { getLevels } from "../utils/progression";
+import { levelsInRange } from "../config/levels";
+
+/**
+ * (Re)build a progressive course's sections from its level → maxLevel range, preserving any
+ * existing per-level settings (physical-assessment toggle, linked final test). Miscellaneous
+ * courses have no sections.
+ */
+async function seedSections(course: InstanceType<typeof Course>): Promise<void> {
+  if (course.courseType !== "progressive") {
+    course.sections = [] as never;
+    return;
+  }
+  const levels = await getLevels();
+  const range = levelsInRange(levels, course.level, course.maxLevel);
+  const existing = new Map(course.sections.map((s) => [s.levelKey, s]));
+  course.sections = range.map((lvl, i) => {
+    const prev = existing.get(lvl.key);
+    return {
+      levelKey: lvl.key,
+      order: i,
+      requiresPhysicalAssessment: prev?.requiresPhysicalAssessment ?? false,
+      finalTest: prev?.finalTest ?? null,
+    };
+  }) as never;
+}
 
 export const createCourseSchema = z.object({
   courseName: z.string().min(3),
@@ -23,6 +49,7 @@ export const createCourseSchema = z.object({
   level: z.string().min(1).default("foundation"),
   maxLevel: z.string().optional(),
   points: z.coerce.number().int().min(0).default(0),
+  requiresPhysicalAssessment: z.coerce.boolean().optional(),
 });
 
 function toArray(v?: string | string[]): string[] {
@@ -67,11 +94,16 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
     level: body.level || "foundation",
     maxLevel: body.maxLevel || undefined,
     points: body.points ?? 0,
+    requiresPhysicalAssessment: body.requiresPhysicalAssessment ?? false,
     thumbnail,
     createdByAdmin: req.auth!.id,
     createdByName: req.auth!.name,
     status: "Draft",
   });
+
+  // Progressive courses get one section per level in their level → maxLevel range.
+  await seedSections(course);
+  await course.save();
 
   res.status(201).json({ success: true, course });
 });
@@ -102,9 +134,31 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   if (body.level !== undefined) course.level = body.level;
   if (body.maxLevel !== undefined) course.maxLevel = (body.maxLevel || undefined) as never;
   if (body.points !== undefined) course.points = Number(body.points);
+  if (body.requiresPhysicalAssessment !== undefined) {
+    course.requiresPhysicalAssessment = Boolean(body.requiresPhysicalAssessment);
+  }
+
+  // Re-seed sections whenever the type or level range changes (preserves existing settings).
+  if (body.courseType !== undefined || body.level !== undefined || body.maxLevel !== undefined) {
+    await seedSections(course);
+  }
 
   await course.save();
   res.json({ success: true, course });
+});
+
+/** Admin: toggle whether a progressive course's section requires a physical assessment. */
+export const updateSection = asyncHandler(async (req: Request, res: Response) => {
+  const course = await Course.findById(req.params.id);
+  if (!course) throw new ApiError(404, "Course not found");
+  const section = course.sections.find((s) => s.levelKey === req.params.levelKey);
+  if (!section) throw new ApiError(404, "Section not found");
+  if (req.body.requiresPhysicalAssessment !== undefined) {
+    section.requiresPhysicalAssessment = Boolean(req.body.requiresPhysicalAssessment);
+  }
+  course.markModified("sections");
+  await course.save();
+  res.json({ success: true, section });
 });
 
 /** Admin: publish / unpublish. Requires at least one module to publish. */
@@ -207,6 +261,7 @@ export const getAdminCourse = asyncHandler(async (req: Request, res: Response) =
       ],
     })
     .populate("finalTest", "title scope isPublished questions")
+    .populate("sections.finalTest", "title scope isPublished questions")
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
   res.json({ success: true, course });

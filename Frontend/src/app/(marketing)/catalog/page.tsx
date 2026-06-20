@@ -18,6 +18,7 @@ export default function CatalogPage() {
   const [levelKeys, setLevelKeys] = useState<string[]>([]);
   const [priceSort, setPriceSort] = useState<PriceSort>("none");
   const [freeOnly, setFreeOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: categories } = useCategories();
   // Fetch the whole published catalogue once; all filtering happens instantly client-side.
@@ -53,12 +54,29 @@ export default function CatalogPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-extrabold text-ink-900">Cricket courses</h1>
-      <p className="mt-1 text-ink-500">Structured video lessons, module tests and coach feedback.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-ink-900">Cricket courses</h1>
+          <p className="mt-1 text-ink-500">Structured video lessons, module tests and coach feedback.</p>
+        </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-ink-700 shadow-sm ring-1 ring-ink-200 hover:bg-ink-50 transition-colors w-fit"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          {showFilters ? "Hide Filters" : "Show Filters"}
+          {activeFilters > 0 && (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">
+              {activeFilters}
+            </span>
+          )}
+        </button>
+      </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
+      <div className={cn("mt-6 grid gap-6", showFilters ? "lg:grid-cols-[260px_1fr]" : "grid-cols-1")}>
         {/* Filters */}
-        <aside className="space-y-5">
+        {showFilters && (
+          <aside className="space-y-5">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search courses…" className="input pl-9" />
@@ -119,7 +137,8 @@ export default function CatalogPage() {
               </button>
             </label>
           </div>
-        </aside>
+          </aside>
+        )}
 
         {/* Results */}
         <section>

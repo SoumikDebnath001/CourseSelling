@@ -15,18 +15,27 @@ import type { AuthPayload } from "../types/auth";
 /* ───────────────────────── schemas ───────────────────────── */
 export const loginSchema = z.object({
   email: z.string().email("A valid email is required"),
-  password: z.string().min(1, "Password is required"),
+  // Cap length so a giant string can never reach bcrypt (DoS guard). bcrypt only
+  // uses the first 72 bytes, so 72 here can't lock out any existing account.
+  password: z.string().min(1, "Password is required").max(72, "Password is too long"),
 });
 export const registerSchema = z.object({
-  name: z.string().min(2, "Your name"),
+  name: z.string().min(2, "Your name").max(80, "Name is too long"),
   email: z.string().email("A valid email is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  // New platform passwords: 6–30 characters (upper bound prevents overload).
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(30, "Password must be at most 30 characters"),
 });
 export const emailOnlySchema = z.object({ email: z.string().email() });
 export const otpSchema = z.object({
   email: z.string().email(),
   otp: z.string().length(6, "Enter the 6-digit code"),
 });
+
+/** Max wrong OTP guesses before the code is burned and must be re-requested. */
+const MAX_OTP_ATTEMPTS = 5;
 
 function accountResponse(p: AuthPayload) {
   return { id: p.id, name: p.name, email: p.email, kind: p.kind, role: p.role, source: p.source };
@@ -98,7 +107,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const hashed = await bcrypt.hash(password, 10);
   const otp = generateOtp();
-  const otpFields = { otpHash: hashOtp(otp), otpExpiry: otpExpiry(), otpPurpose: "verify" as const };
+  const otpFields = { otpHash: hashOtp(otp), otpExpiry: otpExpiry(), otpPurpose: "verify" as const, otpAttempts: 0 };
 
   if (existing) {
     existing.set({ name, password: hashed, ...otpFields });
@@ -119,14 +128,27 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 /** Step 2: verify the registration OTP → account activated → logged in. */
 export const verifyRegistration = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp } = req.body as z.infer<typeof otpSchema>;
-  const user = await OnlinePlatformUser.findOne({ email: email.toLowerCase().trim() }).select("+otpHash +otpExpiry");
+  const user = await OnlinePlatformUser.findOne({ email: email.toLowerCase().trim() }).select(
+    "+otpHash +otpExpiry +otpAttempts"
+  );
   if (!user) throw new ApiError(404, "Account not found");
-  if (!user.isVerified && !isOtpValid(otp, user.otpHash, user.otpExpiry)) {
-    throw new ApiError(400, "Invalid or expired code");
+  if (!user.isVerified) {
+    if ((user.otpAttempts ?? 0) >= MAX_OTP_ATTEMPTS) {
+      user.otpHash = undefined;
+      user.otpExpiry = undefined;
+      await user.save();
+      throw new ApiError(429, "Too many incorrect codes. Please request a new verification code.");
+    }
+    if (!isOtpValid(otp, user.otpHash, user.otpExpiry)) {
+      user.otpAttempts = (user.otpAttempts ?? 0) + 1;
+      await user.save();
+      throw new ApiError(400, "Invalid or expired code");
+    }
   }
   user.isVerified = true;
   user.otpHash = undefined;
   user.otpExpiry = undefined;
+  user.otpAttempts = 0;
   await user.save();
   issue(res, { id: user._id.toString(), kind: "user", source: "platform", name: user.name, email: user.email });
 });
@@ -151,7 +173,7 @@ export const requestLoginOtp = asyncHandler(async (req: Request, res: Response) 
 
   // 3) It's a real user → send the OTP.
   const otp = generateOtp();
-  user.set({ otpHash: hashOtp(otp), otpExpiry: otpExpiry(), otpPurpose: "login" });
+  user.set({ otpHash: hashOtp(otp), otpExpiry: otpExpiry(), otpPurpose: "login", otpAttempts: 0 });
   await user.save();
   const mail = otpLoginEmail(user.name, otp);
   const sent = await mailSender(lc, mail.subject, mail.html);
@@ -163,11 +185,24 @@ export const requestLoginOtp = asyncHandler(async (req: Request, res: Response) 
 /** Complete passwordless login with the emailed code. */
 export const loginWithOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email, otp } = req.body as z.infer<typeof otpSchema>;
-  const user = await OnlinePlatformUser.findOne({ email: email.toLowerCase().trim() }).select("+otpHash +otpExpiry");
+  const user = await OnlinePlatformUser.findOne({ email: email.toLowerCase().trim() }).select(
+    "+otpHash +otpExpiry +otpAttempts"
+  );
   if (!user || !user.isVerified) throw new ApiError(401, "Invalid code");
-  if (!isOtpValid(otp, user.otpHash, user.otpExpiry)) throw new ApiError(400, "Invalid or expired code");
+  if ((user.otpAttempts ?? 0) >= MAX_OTP_ATTEMPTS) {
+    user.otpHash = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+    throw new ApiError(429, "Too many incorrect codes. Please request a new login code.");
+  }
+  if (!isOtpValid(otp, user.otpHash, user.otpExpiry)) {
+    user.otpAttempts = (user.otpAttempts ?? 0) + 1;
+    await user.save();
+    throw new ApiError(400, "Invalid or expired code");
+  }
   user.otpHash = undefined;
   user.otpExpiry = undefined;
+  user.otpAttempts = 0;
   await user.save();
   issue(res, { id: user._id.toString(), kind: "user", source: "platform", name: user.name, email: user.email });
 });

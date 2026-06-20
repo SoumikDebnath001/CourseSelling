@@ -30,10 +30,12 @@ export interface Settings {
     highlight?: string;
     subtitle?: string;
     videoUrl?: string;
+    introVideoUrl?: string;
   };
   foundation: {
     websiteUrl?: string;
     youtubeUrl?: string;
+    imageUrl?: string;
   };
   watermark: {
     enabled: boolean;
@@ -86,9 +88,19 @@ export interface Module {
   moduleName: string;
   description?: string;
   order: number;
+  /** For progressive courses: the level key of the section this module belongs to. */
+  section?: string | null;
   topics: Topic[];
   test?: TestRef | null;
   points?: number;
+}
+
+/** One auto-generated section of a progressive course (one per level in its range). */
+export interface CourseSection {
+  levelKey: string;
+  order: number;
+  requiresPhysicalAssessment: boolean;
+  finalTest?: TestRef | null;
 }
 
 export type CourseType = "progressive" | "miscellaneous";
@@ -112,6 +124,10 @@ export interface Course {
   level: string;
   maxLevel?: string;
   points: number;
+  /** Miscellaneous courses: gate the single certificate behind a physical assessment. */
+  requiresPhysicalAssessment?: boolean;
+  /** Progressive courses: auto-seeded sections (one per level in the range). */
+  sections?: CourseSection[];
   status: "Draft" | "Published";
   studentsEnrolledCount: number;
 }
@@ -234,4 +250,47 @@ export interface SubmitResult {
 export interface Progress {
   completedTopics: string[];
   passedTests: string[];
+}
+
+export type PhysicalAssessmentStatus = "pending" | "test_approved" | "cert_approved";
+
+/** Computed per-section state returned by the learn (full-course) endpoint. */
+export interface SectionStatus {
+  levelKey: string;
+  label: string;
+  order: number;
+  requiresPhysicalAssessment: boolean;
+  locked: boolean;
+  modulesDone: boolean;
+  finalOk: boolean;
+  complete: boolean;
+  certificateEarned: boolean;
+  physicalAssessment: {
+    status: PhysicalAssessmentStatus;
+    whatsappCountryCode: string;
+    whatsappNumber: string;
+  } | null;
+}
+
+/** The caller's physical-assessment application for one level of a course. */
+export interface PhysicalAssessmentEntry {
+  level: string;
+  scope: "course" | "section";
+  status: PhysicalAssessmentStatus;
+  whatsappCountryCode: string;
+  whatsappNumber: string;
+}
+
+/** One row in the admin "Physical Assessment Applications" panel. */
+export interface PhysicalAssessmentApplication {
+  _id: string;
+  studentName: string;
+  whatsappCountryCode: string;
+  whatsappNumber: string;
+  scope: "course" | "section";
+  level: string;
+  levelLabel: string;
+  status: PhysicalAssessmentStatus;
+  course: { _id: string; courseName: string } | null;
+  createdAt?: string;
 }

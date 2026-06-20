@@ -24,7 +24,7 @@ export default function AdminCoursesPage() {
       ) : courses && courses.length > 0 ? (
         <div className="mt-5 space-y-3">
           {courses.map((c) => (
-            <div key={c._id} className="card flex items-center gap-4 p-3">
+            <div key={c._id} className="card flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:gap-4">
               <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-ink-100">
                 {c.thumbnail?.url ? (
                   <Image src={c.thumbnail.url} alt={c.courseName} fill className="object-cover" />
@@ -38,16 +38,18 @@ export default function AdminCoursesPage() {
                 <h3 className="truncate font-semibold text-ink-900">{c.courseName}</h3>
                 <p className="text-xs text-ink-400">{c.modules?.length ?? 0} modules · {c.studentsEnrolledCount ?? 0} enrolled</p>
               </div>
-              <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", c.status === "Published" ? "bg-pitch-100 text-pitch-700" : "bg-ink-100 text-ink-500")}>
-                {c.status}
-              </span>
-              <Link href={`/admin/courses/${c._id}`} className="btn-ghost px-3 py-1.5 text-xs"><Pencil className="h-3.5 w-3.5" /> Edit</Link>
-              <button
-                onClick={() => { if (confirm(`Delete "${c.courseName}"? This removes its videos and content.`)) del.mutate(c._id); }}
-                className="rounded-lg p-2 text-ink-400 hover:bg-ball-50 hover:text-ball-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", c.status === "Published" ? "bg-pitch-100 text-pitch-700" : "bg-ink-100 text-ink-500")}>
+                  {c.status}
+                </span>
+                <Link href={`/admin/courses/${c._id}`} className="btn-ghost ml-auto px-3 py-1.5 text-xs sm:ml-0"><Pencil className="h-3.5 w-3.5" /> Edit</Link>
+                <button
+                  onClick={() => { if (confirm(`Delete "${c.courseName}"? This removes its videos and content.`)) del.mutate(c._id); }}
+                  className="rounded-lg p-2 text-ink-400 hover:bg-ball-50 hover:text-ball-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -6,7 +6,8 @@ import type { LevelDef } from "@/types/api";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
+import Image from "next/image";
+import { useSettings, useUpdateSettings, useUploadFoundationImage, useUploadIntroVideo } from "@/hooks/useSettings";
 import type { Settings } from "@/types/api";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -65,6 +66,8 @@ function Section({ title, description, children }: { title: string; description?
 export default function AdminSettingsPage() {
   const { settings, isLoading } = useSettings();
   const update = useUpdateSettings();
+  const uploadFoundationImage = useUploadFoundationImage();
+  const uploadIntroVideo = useUploadIntroVideo();
   const [form, setForm] = useState<Settings | null>(null);
 
   // Hydrate the editable form once settings have loaded.
@@ -176,8 +179,30 @@ export default function AdminSettingsPage() {
           <Field label="Subtitle">
             <textarea className="input" rows={2} value={form.hero.subtitle ?? ""} onChange={(e) => setHero({ subtitle: e.target.value })} />
           </Field>
-          <Field label="Intro video (YouTube URL)" hint="embedded in the Benefits section">
-            <input className="input" placeholder="https://youtube.com/watch?v=..." value={form.hero.videoUrl ?? ""} onChange={(e) => setHero({ videoUrl: e.target.value })} />
+          <Field label="Intro video" hint="uploaded clip shown in 'See the academy in action'">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-ink-200 bg-ink-900/90">
+                {form.hero.introVideoUrl ? (
+                  <video src={form.hero.introVideoUrl} className="h-full w-full object-cover" muted playsInline />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-white/60">No video</div>
+                )}
+              </div>
+              <label className="cursor-pointer rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
+                {uploadIntroVideo.isPending ? "Uploading…" : "Upload video"}
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  disabled={uploadIntroVideo.isPending}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadIntroVideo.mutate(file, { onSuccess: (s) => setHero({ introVideoUrl: s.hero.introVideoUrl }) });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
           </Field>
         </Section>
 
@@ -185,8 +210,33 @@ export default function AdminSettingsPage() {
           <Field label="Foundation website URL">
             <input className="input" placeholder="https://foundation.example.com" value={form.foundation.websiteUrl ?? ""} onChange={(e) => setFoundation({ websiteUrl: e.target.value })} />
           </Field>
-          <Field label="Foundation YouTube URL">
+          {/* <Field label="Foundation YouTube URL">
             <input className="input" placeholder="https://youtube.com/watch?v=..." value={form.foundation.youtubeUrl ?? ""} onChange={(e) => setFoundation({ youtubeUrl: e.target.value })} />
+          </Field> */}
+          <Field label="Foundation image" hint="shown under the orbit on the home page">
+            <div className="flex items-center gap-4">
+              <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-ink-200 bg-ink-50">
+                {form.foundation.imageUrl ? (
+                  <Image src={form.foundation.imageUrl} alt="Foundation" fill className="object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-ink-400">No image</div>
+                )}
+              </div>
+              <label className="cursor-pointer rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
+                {uploadFoundationImage.isPending ? "Uploading…" : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadFoundationImage.isPending}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadFoundationImage.mutate(file, { onSuccess: (s) => setFoundation({ imageUrl: s.foundation.imageUrl }) });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
           </Field>
         </Section>
 
