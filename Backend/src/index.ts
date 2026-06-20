@@ -12,7 +12,36 @@ import apiRoutes from "./routes";
 
 const app = express();
 
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+// Allow the configured client URL plus its www/apex counterpart, so both
+// https://courses.example.org and https://www.courses.example.org work.
+// CLIENT_URL may also be a comma-separated list of origins.
+const allowedOrigins = (() => {
+  const set = new Set<string>();
+  for (const raw of env.CLIENT_URL.split(",")) {
+    const url = raw.trim();
+    if (!url) continue;
+    set.add(url);
+    try {
+      const u = new URL(url);
+      const host = u.host.startsWith("www.") ? u.host.slice(4) : `www.${u.host}`;
+      set.add(`${u.protocol}//${host}`);
+    } catch {
+      /* non-URL value — keep as-is */
+    }
+  }
+  return [...set];
+})();
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow non-browser requests (no Origin header) and any allowlisted origin.
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

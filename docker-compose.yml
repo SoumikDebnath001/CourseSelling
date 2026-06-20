@@ -1,7 +1,7 @@
 services:
   # ── Backend (Express API) ─────────────────────────────
   backend:
-    image: ${DOCKER_USERNAME}/cricket-academy-backend:latest
+    image: ${DOCKER_USERNAME}/courses-backend:latest
     container_name: courses-backend
     restart: unless-stopped
     env_file:
@@ -9,27 +9,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-    expose:
-      - "4000"
-    networks:
-      - courses-net
-      - shared-proxy
+    ports:
+      - "4000:4000"
 
   # ── Frontend (Next.js) ────────────────────────────────
   frontend:
-    image: ${DOCKER_USERNAME}/cricket-academy-frontend:latest
+    image: ${DOCKER_USERNAME}/courses-frontend:latest
     container_name: courses-frontend
     restart: unless-stopped
-    expose:
-      - "3000"
-    networks:
-      - courses-net
-      - shared-proxy
+    ports:
+      - "3001:3000"
     depends_on:
       - backend
-
-networks:
-  courses-net:
-    driver: bridge
-  shared-proxy:
-    external: true
