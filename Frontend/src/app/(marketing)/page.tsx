@@ -267,7 +267,7 @@ export default function HomePage() {
               <div className="overflow-hidden rounded-3xl bg-ink-100 shadow-xl ring-1 ring-ink-100 transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl">
                 <div className="aspect-[16/10] w-full relative">
                   {foundationImage ? (
-                    <Image src={foundationImage} alt="Our foundation" width={640} height={400} className="h-full w-full object-cover" />
+                    <Image src={foundationImage} alt="Our foundation" width={640} height={400} unoptimized className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-ink-50 text-ink-400">
                       <Image src="/brand/logo.png" alt="" width={60} height={60} className="h-12 w-12 opacity-30 grayscale" />

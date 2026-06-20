@@ -36,6 +36,7 @@ export function CourseCard({
             src={course.thumbnail.url}
             alt={course.courseName}
             fill
+            unoptimized
             sizes="(max-width:768px) 100vw, 33vw"
             className={cn("object-cover transition", locked ? "opacity-60" : "group-hover:scale-[1.02]")}
           />
