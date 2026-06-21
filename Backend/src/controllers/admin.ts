@@ -57,12 +57,12 @@ export const listStudents = asyncHandler(async (req: Request, res: Response) => 
 
   const [members, platform] = await Promise.all([
     ExistingUser.find(memberFilter).select("name email role isActive").limit(100).lean(),
-    OnlinePlatformUser.find(platformFilter).select("name email isVerified").limit(100).lean(),
+    OnlinePlatformUser.find(platformFilter).select("name email isVerified isSuspended").limit(100).lean(),
   ]);
 
   const rows = [
-    ...members.map((u) => ({ _id: u._id, name: u.name, email: u.email, role: u.role, isActive: u.isActive, source: "member" as const })),
-    ...platform.map((u) => ({ _id: u._id, name: u.name, email: u.email, role: "online", isActive: u.isVerified, source: "platform" as const })),
+    ...members.map((u) => ({ _id: u._id, name: u.name, email: u.email, role: u.role, isActive: u.isActive, isSuspended: false, source: "member" as const })),
+    ...platform.map((u) => ({ _id: u._id, name: u.name, email: u.email, role: "online", isActive: u.isVerified && !u.isSuspended, isSuspended: Boolean(u.isSuspended), source: "platform" as const })),
   ];
 
   const withDetails = await Promise.all(
@@ -157,6 +157,69 @@ export const grantStudentCourse = asyncHandler(async (req: Request, res: Respons
 /** Admin: revoke a previously granted course access. */
 export const revokeStudentCourse = asyncHandler(async (req: Request, res: Response) => {
   await CourseAccessGrant.deleteOne({ userId: req.params.userId, course: req.params.courseId });
+  res.json({ success: true });
+});
+
+/* ─────────────── Platform user management (online signups only) ─────────────── */
+/**
+ * Academy members live in the shared, READ-ONLY `users` collection and must never be
+ * edited from here. Only this app's own platform signups can be managed. Resolves the
+ * target as a platform user or rejects with a clear message.
+ */
+async function getManageablePlatformUser(userId: string) {
+  const user = await OnlinePlatformUser.findById(userId);
+  if (!user) {
+    const member = await ExistingUser.exists({ _id: userId });
+    if (member) {
+      throw new ApiError(403, "Academy members are managed in the main academy app and can't be edited here.");
+    }
+    throw new ApiError(404, "User not found");
+  }
+  return user;
+}
+
+const updateUserSchema = z.object({
+  name: z.string().trim().min(2).optional(),
+  email: z.string().trim().email().optional(),
+});
+
+/** Admin: edit a platform user's name/email. */
+export const updateStudent = asyncHandler(async (req: Request, res: Response) => {
+  const body = updateUserSchema.parse(req.body);
+  const user = await getManageablePlatformUser(req.params.userId);
+
+  if (body.email && body.email.toLowerCase() !== user.email) {
+    const lc = body.email.toLowerCase().trim();
+    const clash = await OnlinePlatformUser.exists({ email: lc, _id: { $ne: user._id } });
+    if (clash) throw new ApiError(409, "Another account already uses this email.");
+    user.email = lc;
+  }
+  if (body.name) user.name = body.name;
+  await user.save();
+  res.json({ success: true });
+});
+
+const statusSchema = z.object({ suspended: z.boolean() });
+
+/** Admin: suspend or reactivate a platform user (blocks/unblocks login). */
+export const setStudentStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { suspended } = statusSchema.parse(req.body);
+  const user = await getManageablePlatformUser(req.params.userId);
+  user.isSuspended = suspended;
+  await user.save();
+  res.json({ success: true, isSuspended: user.isSuspended });
+});
+
+/** Admin: permanently delete a platform user and their app-owned progression data. */
+export const deleteStudent = asyncHandler(async (req: Request, res: Response) => {
+  const user = await getManageablePlatformUser(req.params.userId);
+  await Promise.all([
+    Enrollment.deleteMany({ userId: user._id }),
+    UserCategoryProgress.deleteMany({ userId: user._id }),
+    CourseAccessGrant.deleteMany({ userId: user._id }),
+    CertificateRecord.deleteMany({ userId: user._id }),
+  ]);
+  await user.deleteOne();
   res.json({ success: true });
 });
 

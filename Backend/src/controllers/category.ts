@@ -25,6 +25,44 @@ export const listCategories = asyncHandler(async (_req: Request, res: Response) 
   res.json({ success: true, categories });
 });
 
+export const updateCategorySchema = z.object({
+  name: z.string().min(2).optional(),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+});
+
+/** Admin: edit a category's name (slug follows), description or icon. */
+export const updateCategory = asyncHandler(async (req: Request, res: Response) => {
+  const { name, description, icon } = req.body as z.infer<typeof updateCategorySchema>;
+  const category = await Category.findById(req.params.id);
+  if (!category) throw new ApiError(404, "Category not found");
+
+  if (name && name !== category.name) {
+    const slug = slugify(name);
+    const clash = await Category.findOne({ slug, _id: { $ne: category._id } });
+    if (clash) throw new ApiError(409, "A category with this name already exists");
+    category.name = name;
+    category.slug = slug;
+  }
+  if (description !== undefined) category.description = description;
+  if (icon !== undefined) category.icon = icon;
+  await category.save();
+  res.json({ success: true, category });
+});
+
+/** Admin: delete a category, unless courses still reference it. */
+export const deleteCategory = asyncHandler(async (req: Request, res: Response) => {
+  const category = await Category.findById(req.params.id);
+  if (!category) throw new ApiError(404, "Category not found");
+
+  const inUse = await Course.countDocuments({ category: category._id });
+  if (inUse > 0) {
+    throw new ApiError(409, `This category is used by ${inUse} course${inUse === 1 ? "" : "s"}. Reassign or remove them first.`);
+  }
+  await category.deleteOne();
+  res.json({ success: true });
+});
+
 /** Category page: the category + its published courses. */
 export const categoryPage = asyncHandler(async (req: Request, res: Response) => {
   const category = await Category.findById(req.params.id).lean();

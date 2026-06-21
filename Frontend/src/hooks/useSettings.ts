@@ -36,7 +36,9 @@ export const DEFAULT_SETTINGS: Settings = {
   hero: {},
   foundation: {},
   footer: {},
+  about: { images: [] },
   socials: {},
+  socialOrder: {},
   footerLinks: DEFAULT_FOOTER_LINKS,
   watermark: { enabled: true, opacity: 0.04 },
   levels: DEFAULT_LEVELS,
@@ -57,7 +59,9 @@ export function useSettings() {
         hero: { ...s.hero },
         foundation: { ...s.foundation },
         footer: { ...s.footer },
+        about: { images: [], ...s.about },
         socials: { ...s.socials },
+        socialOrder: { ...s.socialOrder },
         footerLinks: s.footerLinks?.length ? s.footerLinks : DEFAULT_FOOTER_LINKS,
         watermark: { ...DEFAULT_SETTINGS.watermark, ...s.watermark },
       } as Settings;
@@ -113,6 +117,42 @@ export function useUploadFoundationImage() {
     },
     onSuccess: () => {
       toast.success("Foundation image updated");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Admin: upload and append an image shown on the public About page. */
+export function useUploadAboutImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("image", file);
+      const { data } = await api.post<{ settings: Settings }>("/settings/about-image", fd);
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Image added");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Admin: remove an About-page image by its storage key. */
+export function useRemoveAboutImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (publicId: string) => {
+      const { data } = await api.delete<{ settings: Settings }>("/settings/about-image", {
+        params: { publicId },
+      });
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Image removed");
       qc.invalidateQueries({ queryKey: ["settings"] });
     },
     onError: (e) => toast.error(apiError(e)),

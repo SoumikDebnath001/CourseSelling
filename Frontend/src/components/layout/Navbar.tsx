@@ -88,11 +88,13 @@ export function Navbar() {
   }, [isSidebarOpen]);
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-ink-200 bg-white/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-center px-4 py-3">
         <PillNav
           logo="/brand/logo.png"
           logoAlt={settings?.platformName || "Academy"}
+          logoText={settings?.platformName || "Academy"}
           items={[
             { label: 'Home', href: '/' },
             { label: 'Courses', href: '/catalog' },
@@ -108,8 +110,12 @@ export function Navbar() {
           className="shadow-sm border border-ink-100 rounded-full"
         />
       </nav>
+      </header>
 
       {/* ───────── Mobile Sidebar Overlay ───────── */}
+      {/* Rendered OUTSIDE the backdrop-blurred header — a `backdrop-filter` ancestor
+          would otherwise become the containing block for these `fixed` elements and
+          make the sidebar scroll with the page. */}
       <div
         ref={overlayRef}
         className="fixed inset-0 z-[100] bg-ink-900/40 backdrop-blur-sm invisible opacity-0 md:hidden"
@@ -167,7 +173,7 @@ export function Navbar() {
           </div>
         </div>
       </div>
-    </header>
+    </>
   );
 }
 

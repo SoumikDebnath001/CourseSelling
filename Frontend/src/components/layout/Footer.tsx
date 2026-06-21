@@ -58,12 +58,17 @@ function Heading({ children }: { children: React.ReactNode }) {
 
 export function Footer() {
   const { settings } = useSettings();
-  const { platformName, email, contactPhone, place, footer, socials } = settings;
+  const { platformName, email, contactPhone, place, footer, socials, socialOrder } = settings;
   const { ref, inView } = useInView<HTMLDivElement>();
 
-  const socialItems = SOCIAL_DEFS.map((d) => ({ ...d, url: socials?.[d.key] })).filter(
-    (d): d is typeof d & { url: string } => Boolean(d.url)
-  );
+  const socialItems = SOCIAL_DEFS.map((d, i) => ({
+    ...d,
+    url: socials?.[d.key],
+    // Admin-set order wins; fall back to the default definition order.
+    order: socialOrder?.[d.key] ?? i,
+  }))
+    .filter((d): d is typeof d & { url: string } => Boolean(d.url))
+    .sort((a, b) => a.order - b.order);
 
   const about =
     footer?.about ||

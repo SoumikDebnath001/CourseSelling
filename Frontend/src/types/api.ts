@@ -40,6 +40,12 @@ export interface Settings {
   footer: {
     about?: string;
   };
+  about: {
+    title?: string;
+    intro?: string;
+    body?: string;
+    images: { url?: string; publicId?: string }[];
+  };
   socials: {
     whatsapp?: string;
     instagram?: string;
@@ -47,6 +53,14 @@ export interface Settings {
     youtube?: string;
     twitter?: string;
     linkedin?: string;
+  };
+  socialOrder: {
+    whatsapp?: number;
+    instagram?: number;
+    facebook?: number;
+    youtube?: number;
+    twitter?: number;
+    linkedin?: number;
   };
   footerLinks: FooterLinkGroup[];
   watermark: {

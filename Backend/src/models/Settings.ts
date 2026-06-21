@@ -35,6 +35,14 @@ export interface ISettings extends Document {
   footer: {
     about?: string;
   };
+  /** Standalone "About us" page content — separate from the short footer blurb. */
+  about: {
+    title?: string;
+    intro?: string;
+    body?: string;
+    /** Uploaded images shown on the About page (CDN url + storage key). */
+    images: { url?: string; publicId?: string }[];
+  };
   /** Social profile URLs rendered as animated icons in the footer. Empty = hidden. */
   socials: {
     whatsapp?: string;
@@ -43,6 +51,15 @@ export interface ISettings extends Document {
     youtube?: string;
     twitter?: string;
     linkedin?: string;
+  };
+  /** Display order for each social icon (lower = first). Lets admins re-order icons. */
+  socialOrder: {
+    whatsapp?: number;
+    instagram?: number;
+    facebook?: number;
+    youtube?: number;
+    twitter?: number;
+    linkedin?: number;
   };
   /** Configurable footer link columns (e.g. Sitemap, Resources). */
   footerLinks: { title: string; items: { label: string; href: string }[] }[];
@@ -133,6 +150,20 @@ const settingsSchema = new Schema<ISettings>(
     footer: {
       about: { type: String, trim: true },
     },
+    about: {
+      title: { type: String, trim: true },
+      intro: { type: String, trim: true },
+      body: { type: String, trim: true },
+      images: {
+        type: [
+          new Schema(
+            { url: { type: String, trim: true }, publicId: { type: String, trim: true } },
+            { _id: false }
+          ),
+        ],
+        default: [],
+      },
+    },
     socials: {
       whatsapp: { type: String, trim: true },
       instagram: { type: String, trim: true },
@@ -140,6 +171,14 @@ const settingsSchema = new Schema<ISettings>(
       youtube: { type: String, trim: true },
       twitter: { type: String, trim: true },
       linkedin: { type: String, trim: true },
+    },
+    socialOrder: {
+      whatsapp: { type: Number },
+      instagram: { type: Number },
+      facebook: { type: Number },
+      youtube: { type: Number },
+      twitter: { type: Number },
+      linkedin: { type: Number },
     },
     footerLinks: { type: [footerLinkGroupSchema], default: () => DEFAULT_FOOTER_LINKS.map((g) => ({ ...g })) },
     watermark: {

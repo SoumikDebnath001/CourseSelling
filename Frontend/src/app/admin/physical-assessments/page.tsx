@@ -25,22 +25,24 @@ export default function PhysicalAssessmentsPage() {
           <p className="mt-1 text-sm text-ink-400">Students who applied to sit an offline assessment to unlock a certificate.</p>
         </div>
         {/* Not approved / Approved toggle slider */}
-        <div className="relative inline-flex shrink-0 rounded-full bg-ink-100 p-1 text-sm font-semibold">
+        <div className="relative grid shrink-0 grid-cols-2 rounded-full bg-ink-100 p-1 text-sm font-semibold">
+          {/* Indicator is sized to half the inner track (50% minus the p-1 padding) so it
+              lines up exactly under each button instead of overflowing. */}
           <span
             className={cn(
-              "absolute inset-y-1 w-1/2 rounded-full bg-white shadow-sm transition-transform",
+              "pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm transition-transform duration-200",
               filter === "approved" && "translate-x-full"
             )}
           />
           <button
             onClick={() => setFilter("pending")}
-            className={cn("relative z-10 w-32 rounded-full py-1.5 transition-colors", filter === "pending" ? "text-ink-900" : "text-ink-400")}
+            className={cn("relative z-10 rounded-full px-4 py-1.5 transition-colors sm:px-6", filter === "pending" ? "text-ink-900" : "text-ink-400")}
           >
             Not approved
           </button>
           <button
             onClick={() => setFilter("approved")}
-            className={cn("relative z-10 w-32 rounded-full py-1.5 transition-colors", filter === "approved" ? "text-ink-900" : "text-ink-400")}
+            className={cn("relative z-10 rounded-full px-4 py-1.5 transition-colors sm:px-6", filter === "approved" ? "text-ink-900" : "text-ink-400")}
           >
             Approved
           </button>

@@ -7,6 +7,9 @@ import {
   adjustStudentPoints,
   grantStudentCourse,
   revokeStudentCourse,
+  updateStudent,
+  setStudentStatus,
+  deleteStudent,
   analytics,
 } from "../controllers/admin";
 import {
@@ -22,6 +25,9 @@ router.get("/dashboard", requireAuth, requireAdmin, dashboard);
 router.get("/analytics", requireAuth, requireAdmin, analytics);
 router.get("/students", requireAuth, requireAdmin, listStudents);
 router.get("/students/:userId/progression", requireAuth, requireAdmin, getStudentProgression);
+router.patch("/students/:userId", requireAuth, requireAdmin, updateStudent);
+router.patch("/students/:userId/status", requireAuth, requireAdmin, setStudentStatus);
+router.delete("/students/:userId", requireAuth, requireAdmin, deleteStudent);
 router.patch("/students/:userId/level", requireAuth, requireAdmin, setStudentLevel);
 router.patch("/students/:userId/points", requireAuth, requireAdmin, adjustStudentPoints);
 router.post("/students/:userId/grant", requireAuth, requireAdmin, grantStudentCourse);

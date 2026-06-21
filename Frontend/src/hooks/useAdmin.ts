@@ -52,6 +52,7 @@ export interface AdminStudent {
   email: string;
   role: string;
   isActive: boolean;
+  isSuspended: boolean;
   source: "member" | "platform";
   enrolledCount: number;
   certificates: number;
@@ -135,6 +136,30 @@ export function useRevokeCourseAccess() {
   return useStudentMutation<{ userId: string; courseId: string }>(
     (v) => api.delete(`/admin/students/${v.userId}/grant/${v.courseId}`),
     "Access revoked"
+  );
+}
+
+/** Edit a platform user's name/email. */
+export function useUpdateStudent() {
+  return useStudentMutation<{ userId: string; name?: string; email?: string }>(
+    (v) => api.patch(`/admin/students/${v.userId}`, { name: v.name, email: v.email }),
+    "User updated"
+  );
+}
+
+/** Suspend or reactivate a platform user. */
+export function useSetStudentStatus() {
+  return useStudentMutation<{ userId: string; suspended: boolean }>(
+    (v) => api.patch(`/admin/students/${v.userId}/status`, { suspended: v.suspended }),
+    "Status updated"
+  );
+}
+
+/** Permanently delete a platform user. */
+export function useDeleteStudent() {
+  return useStudentMutation<{ userId: string }>(
+    (v) => api.delete(`/admin/students/${v.userId}`),
+    "User deleted"
   );
 }
 
@@ -329,5 +354,18 @@ export function useCategoriesAdmin() {
     onSuccess: () => { toast.success("Category created"); qc.invalidateQueries({ queryKey: ["categories"] }); },
     onError: (e) => toast.error(apiError(e)),
   });
-  return { list, create };
+  const update = useMutation({
+    mutationFn: (vars: { id: string; name?: string; description?: string }) => {
+      const { id, ...rest } = vars;
+      return api.put(`/categories/${id}`, rest);
+    },
+    onSuccess: () => { toast.success("Category updated"); qc.invalidateQueries({ queryKey: ["categories"] }); },
+    onError: (e) => toast.error(apiError(e)),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/categories/${id}`),
+    onSuccess: () => { toast.success("Category deleted"); qc.invalidateQueries({ queryKey: ["categories"] }); },
+    onError: (e) => toast.error(apiError(e)),
+  });
+  return { list, create, update, remove };
 }

@@ -14,6 +14,8 @@ export interface IOnlinePlatformUser extends Document {
   email: string;
   password: string;
   isVerified: boolean;
+  /** Admin-toggled: suspended users keep their data but cannot log in. */
+  isSuspended: boolean;
   otpHash?: string;
   otpExpiry?: Date;
   otpPurpose?: "verify" | "login";
@@ -27,6 +29,7 @@ const schema = new Schema<IOnlinePlatformUser>(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, select: false },
     isVerified: { type: Boolean, default: false },
+    isSuspended: { type: Boolean, default: false },
     otpHash: { type: String, select: false },
     otpExpiry: { type: Date, select: false },
     otpPurpose: { type: String, enum: ["verify", "login"], select: false },

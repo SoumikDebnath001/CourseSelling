@@ -75,6 +75,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   // 2) Platform signup
   const platform = await OnlinePlatformUser.findOne({ email: lc }).select("+password");
   if (!platform) throw new ApiError(401, "Invalid email or password");
+  if (platform.isSuspended) throw new ApiError(403, "Your account has been suspended. Please contact support.");
   if (!platform.isVerified) throw new ApiError(403, "Please verify your email first");
   if (await bcrypt.compare(password, platform.password ?? "")) {
     return issue(res, {
@@ -169,6 +170,7 @@ export const requestLoginOtp = asyncHandler(async (req: Request, res: Response) 
   // 2) Must be a registered (and verified) platform user before we send a code.
   const user = await OnlinePlatformUser.findOne({ email: lc });
   if (!user) throw new ApiError(404, "No account found for this email. Please sign up first.");
+  if (user.isSuspended) throw new ApiError(403, "Your account has been suspended. Please contact support.");
   if (!user.isVerified) throw new ApiError(403, "This email isn't verified yet. Sign up again to get a verification code.");
 
   // 3) It's a real user → send the OTP.
@@ -189,6 +191,7 @@ export const loginWithOtp = asyncHandler(async (req: Request, res: Response) => 
     "+otpHash +otpExpiry +otpAttempts"
   );
   if (!user || !user.isVerified) throw new ApiError(401, "Invalid code");
+  if (user.isSuspended) throw new ApiError(403, "Your account has been suspended. Please contact support.");
   if ((user.otpAttempts ?? 0) >= MAX_OTP_ATTEMPTS) {
     user.otpHash = undefined;
     user.otpExpiry = undefined;

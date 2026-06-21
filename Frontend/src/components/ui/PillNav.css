@@ -58,6 +58,26 @@
   display: block;
 }
 
+.pill-logo-text {
+  margin-left: 10px;
+  margin-right: 12px;
+  font-weight: 800;
+  font-size: 17px;
+  color: #111827;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .pill-logo-text {
+    /* Hug the logo on the left and push the hamburger to the far right. */
+    margin-right: auto;
+    max-width: 60vw;
+  }
+}
+
 .pill-list {
   list-style: none;
   display: flex;

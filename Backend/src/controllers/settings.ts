@@ -2,13 +2,20 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
-import { Settings } from "../models/Settings";
+import { Settings, ISettings } from "../models/Settings";
 import { uploadFile, deleteFile, signedAssetUrl } from "../utils/storage";
 
-/** Replace stored intro-video / foundation-image URLs with fresh presigned ones, in place. */
-function signSettingsAssets(s: { hero?: { introVideoUrl?: string; introVideoPublicId?: string }; foundation?: { imageUrl?: string; imagePublicId?: string } }): void {
+/** Replace stored intro-video / foundation-image / about-image URLs with fresh presigned ones, in place. */
+function signSettingsAssets(s: {
+  hero?: { introVideoUrl?: string; introVideoPublicId?: string };
+  foundation?: { imageUrl?: string; imagePublicId?: string };
+  about?: { images?: { url?: string; publicId?: string }[] };
+}): void {
   if (s.hero) s.hero.introVideoUrl = signedAssetUrl(s.hero.introVideoPublicId, s.hero.introVideoUrl);
   if (s.foundation) s.foundation.imageUrl = signedAssetUrl(s.foundation.imagePublicId, s.foundation.imageUrl);
+  if (s.about?.images) {
+    for (const img of s.about.images) img.url = signedAssetUrl(img.publicId, img.url);
+  }
 }
 
 /** Accepts a URL or an empty string (so admins can clear a field). */
@@ -40,6 +47,13 @@ export const settingsSchema = z.object({
       about: z.string().trim().optional(),
     })
     .optional(),
+  about: z
+    .object({
+      title: z.string().trim().optional(),
+      intro: z.string().trim().optional(),
+      body: z.string().trim().optional(),
+    })
+    .optional(),
   socials: z
     .object({
       whatsapp: urlOrEmpty.optional(),
@@ -48,6 +62,16 @@ export const settingsSchema = z.object({
       youtube: urlOrEmpty.optional(),
       twitter: urlOrEmpty.optional(),
       linkedin: urlOrEmpty.optional(),
+    })
+    .optional(),
+  socialOrder: z
+    .object({
+      whatsapp: z.coerce.number().int().optional(),
+      instagram: z.coerce.number().int().optional(),
+      facebook: z.coerce.number().int().optional(),
+      youtube: z.coerce.number().int().optional(),
+      twitter: z.coerce.number().int().optional(),
+      linkedin: z.coerce.number().int().optional(),
     })
     .optional(),
   footerLinks: z
@@ -123,11 +147,23 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
     if (body.footer.about !== undefined) settings.footer.about = body.footer.about;
     settings.markModified("footer");
   }
+  if (body.about) {
+    for (const k of ["title", "intro", "body"] as const) {
+      if (body.about[k] !== undefined) settings.about[k] = body.about[k];
+    }
+    settings.markModified("about");
+  }
   if (body.socials) {
     for (const k of ["whatsapp", "instagram", "facebook", "youtube", "twitter", "linkedin"] as const) {
       if (body.socials[k] !== undefined) settings.socials[k] = body.socials[k];
     }
     settings.markModified("socials");
+  }
+  if (body.socialOrder) {
+    for (const k of ["whatsapp", "instagram", "facebook", "youtube", "twitter", "linkedin"] as const) {
+      if (body.socialOrder[k] !== undefined) settings.socialOrder[k] = body.socialOrder[k];
+    }
+    settings.markModified("socialOrder");
   }
   if (body.footerLinks !== undefined) {
     settings.footerLinks = body.footerLinks;
@@ -176,6 +212,39 @@ export const uploadFoundationImage = asyncHandler(async (req: Request, res: Resp
   settings.foundation.imageUrl = up.url;
   settings.foundation.imagePublicId = up.key;
   settings.markModified("foundation");
+  await settings.save();
+
+  const out = settings.toObject();
+  signSettingsAssets(out);
+  res.json({ success: true, settings: out });
+});
+
+/** Admin: upload and append an image shown on the public About page. */
+export const uploadAboutImage = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.files?.image as UploadedFile | undefined;
+  if (!file) throw new ApiError(400, "No image file provided");
+
+  const settings = await Settings.getSingleton();
+  const up = await uploadFile(file, "about");
+  if (!settings.about) settings.about = { images: [] } as ISettings["about"];
+  settings.about.images.push({ url: up.url, publicId: up.key });
+  settings.markModified("about");
+  await settings.save();
+
+  const out = settings.toObject();
+  signSettingsAssets(out);
+  res.json({ success: true, settings: out });
+});
+
+/** Admin: remove an About-page image by its storage key (passed as ?publicId=, since keys contain slashes). */
+export const removeAboutImage = asyncHandler(async (req: Request, res: Response) => {
+  const publicId = String(req.query.publicId || req.body?.publicId || "");
+  if (!publicId) throw new ApiError(400, "No image id provided");
+
+  const settings = await Settings.getSingleton();
+  await deleteFile(publicId);
+  settings.about.images = (settings.about.images ?? []).filter((img) => img.publicId !== publicId);
+  settings.markModified("about");
   await settings.save();
 
   const out = settings.toObject();

@@ -6,8 +6,9 @@ import { useSettings } from "@/hooks/useSettings";
 
 /**
  * Faint academy-icon watermark shown behind the content of every page EXCEPT the
- * home page (which has its own bespoke background). Driven by admin settings —
- * admins can toggle it off or tune its opacity.
+ * home page (which has its own bespoke background) and the course-watching pages
+ * (where it would overlap the video). Driven by admin settings — admins can toggle
+ * it off or tune its opacity.
  */
 export function Watermark() {
   const pathname = usePathname();
@@ -15,6 +16,8 @@ export function Watermark() {
 
   // Home ("/") opts out — it ships its own decorative background.
   if (pathname === "/") return null;
+  // Course-watching pages opt out — the watermark would sit over the video.
+  if (pathname.startsWith("/learn")) return null;
   if (!settings.watermark?.enabled) return null;
 
   const opacity = settings.watermark.opacity ?? 0.04;
