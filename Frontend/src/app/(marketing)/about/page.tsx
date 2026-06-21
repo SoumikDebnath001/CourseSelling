@@ -25,7 +25,7 @@ export default function AboutPage() {
   const paragraphs = body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16 lg:min-h-screen">
       <h1 className="text-2xl font-extrabold text-ink-900 sm:text-3xl">{title}</h1>
 
       {intro && <p className="mt-4 text-ink-600">{intro}</p>}
