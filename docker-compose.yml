@@ -9,6 +9,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+      # ── Pesapal payment gateway (values come from .env via env_file; listed
+      # here explicitly so the compose file documents what the backend needs) ──
+      PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
+      PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
+      PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
+      PESAPAL_CURRENCY: ${PESAPAL_CURRENCY:-KES}
+      PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-}
+      PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
+      PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-}
     # Bind to loopback only: the API must be reached through the Nginx TLS proxy,
     # never directly on the host's public interface.
     ports:

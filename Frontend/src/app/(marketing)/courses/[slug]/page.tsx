@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Users, PlayCircle, BookOpen, Lock, Layers } from "lucide-react";
 import { useCourseBySlug } from "@/hooks/useCourses";
-import { useEnroll } from "@/hooks/useEnroll";
+import { useEnroll, useInitiatePayment } from "@/hooks/useEnroll";
 import { useMyProgression } from "@/hooks/useProgression";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/store/auth";
@@ -20,6 +20,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
   const router = useRouter();
   const { data, isLoading } = useCourseBySlug(slug);
   const enroll = useEnroll();
+  const payment = useInitiatePayment();
   const { data: progression } = useMyProgression();
   const { settings } = useSettings();
   const account = useAuth((s) => s.account);
@@ -45,6 +46,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
   const onEnrollClick = () => {
     if (!account) return router.push("/login");
     if (account.kind === "admin") return router.push(`/admin/courses/${course._id}`);
+    // Paid courses go through Pesapal's hosted checkout; free ones enrol instantly.
+    if (course.price > 0) return payment.mutate(course._id);
     enroll.mutate(course._id, { onSuccess: () => router.push(`/learn/${course._id}`) });
   };
 
@@ -131,8 +134,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                   Go to course
                 </Button>
               ) : (
-                <Button className="mt-4 w-full py-2.5" loading={enroll.isPending} onClick={onEnrollClick}>
-                  {account?.kind === "admin" ? "Manage course" : "Enrol now"}
+                <Button
+                  className="mt-4 w-full py-2.5"
+                  loading={enroll.isPending || payment.isPending || payment.isSuccess}
+                  onClick={onEnrollClick}
+                >
+                  {account?.kind === "admin" ? "Manage course" : course.price > 0 ? "Buy course" : "Enrol now"}
                 </Button>
               )}
               <p className="mt-3 text-center text-xs text-ink-400">Lifetime access · {topicCount} lessons</p>

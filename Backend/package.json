@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "check:isolation": "tsx src/scripts/checkIsolation.ts",
     "sync:indexes": "tsx src/scripts/syncIndexes.ts",
-    "mail:test": "tsx src/scripts/mailTest.ts"
+    "mail:test": "tsx src/scripts/mailTest.ts",
+    "pesapal:test": "tsx src/scripts/pesapalTest.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

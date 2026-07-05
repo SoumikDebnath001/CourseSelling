@@ -7,18 +7,16 @@ import { Enrollment } from "../models/Enrollment";
 import { CourseProgress } from "../models/CourseProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
 import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
-import { paymentProvider } from "../services/payment";
+import { fulfilEnrollment } from "../services/fulfilment";
 import { isCourseUnlockedForUser, getLevels } from "../utils/progression";
 import { levelLabel } from "../config/levels";
 import { signThumbnail, signCourseAssets } from "../utils/storage";
 import { canAccessCourseContent } from "../utils/access";
-import { sendMailAsync } from "../mail/mailSender";
-import { courseEnrollmentEmail } from "../mail/templates";
 
 /**
- * Student: enrol in a course. Goes through the payment seam (free today) and then
- * creates our own enrollment + progress docs in *_appTwo collections. Never writes
- * to the existing app's user/enrollment collections.
+ * Student: enrol in a FREE course. Paid courses must go through the Pesapal flow
+ * (POST /payments/pesapal/initiate/:courseId) — this endpoint refuses them so the
+ * price can never be bypassed. Writes only to *_appTwo collections.
  */
 export const enroll = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.auth!.id;
@@ -35,26 +33,19 @@ export const enroll = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(403, "This course is locked. Complete previous levels and earn the required points to unlock it.");
   }
 
-  const intent = await paymentProvider.charge({ userId, courseId: course._id.toString(), amount: course.price });
-  if (!intent.paid) throw new ApiError(402, "Payment required");
+  // Paid course → the client must run the payment flow; signal it explicitly.
+  if (course.price > 0) {
+    return res.status(402).json({ success: false, requiresPayment: true, message: "Payment required for this course" });
+  }
 
-  const enrollment = await Enrollment.create({
+  const enrollment = await fulfilEnrollment({
     userId,
-    course: course._id,
-    paymentRef: intent.reference,
-    amountPaid: intent.amount,
+    course,
+    paymentRef: "free",
+    amountPaid: 0,
+    email: req.auth!.email,
+    name: req.auth!.name,
   });
-  await CourseProgress.updateOne(
-    { userId, course: course._id },
-    { $setOnInsert: { completedTopics: [], passedTests: [] } },
-    { upsert: true }
-  );
-  await Course.updateOne({ _id: course._id }, { $inc: { studentsEnrolledCount: 1 } });
-
-  sendMailAsync(
-    req.auth!.email,
-    ...Object.values(courseEnrollmentEmail(req.auth!.name, course.courseName, course.slug)) as [string, string]
-  );
 
   res.status(201).json({ success: true, enrollment });
 });

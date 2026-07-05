@@ -28,6 +28,15 @@ export const emailLimiter = rateLimit({
   message: json("Too many requests. Please try again later."),
 });
 
+/** Payment initiation: each call creates a gateway order, so keep it tight. */
+export const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20, // per IP per window
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: json("Too many payment attempts. Please wait a few minutes and try again."),
+});
+
 /** A sane default ceiling for the rest of the API. */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

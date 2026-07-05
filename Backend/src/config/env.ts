@@ -37,6 +37,24 @@ const schema = z.object({
   /** Customer subdomain code — the "xyz" in customer-xyz.cloudflarestream.com. */
   CF_STREAM_CUSTOMER_CODE: z.string().optional(),
 
+  // ── Pesapal (payment gateway — API 3.0) ──
+  PESAPAL_CONSUMER_KEY: z.string().optional(),
+  PESAPAL_CONSUMER_SECRET: z.string().optional(),
+  /** "sandbox" hits cybqa.pesapal.com (demo money); "live" hits pay.pesapal.com. */
+  PESAPAL_ENV: z.enum(["sandbox", "live"]).default("sandbox"),
+  /** ISO currency code sent with every order. Course prices are stored in this currency. */
+  PESAPAL_CURRENCY: z.string().default("KES"),
+  /**
+   * PUBLIC URL of this API's IPN endpoint, e.g.
+   * https://api.yourdomain.com/api/v1/payments/pesapal/ipn — Pesapal calls it
+   * server-to-server on payment status changes, so it must be internet-reachable.
+   */
+  PESAPAL_IPN_URL: z.string().optional(),
+  /** Optional: a pre-registered IPN id. When set, runtime IPN registration is skipped. */
+  PESAPAL_IPN_ID: z.string().optional(),
+  /** Where Pesapal sends the payer's browser after checkout. Defaults to CLIENT_URL + /payment/callback. */
+  PESAPAL_CALLBACK_URL: z.string().optional(),
+
   MAIL_HOST: z.string().optional(),
   MAIL_PORT: z.coerce.number().optional(),
   MAIL_USER: z.string().optional(),
@@ -76,3 +94,6 @@ export const isStreamConfigured = Boolean(
 );
 
 export const isMailConfigured = Boolean(env.MAIL_HOST && env.MAIL_USER && env.MAIL_PASS);
+
+/** True when the Pesapal gateway can accept paid enrollments. */
+export const isPesapalConfigured = Boolean(env.PESAPAL_CONSUMER_KEY && env.PESAPAL_CONSUMER_SECRET);
