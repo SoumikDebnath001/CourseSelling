@@ -7,6 +7,7 @@ import { useCreateCourse, useCategoriesAdmin } from "@/hooks/useAdmin";
 import { useSettings } from "@/hooks/useSettings";
 import { LevelSlider } from "@/components/course/LevelSlider";
 import { Button } from "@/components/ui/Button";
+import { formatBytes, formatLabel } from "@/lib/format";
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function NewCoursePage() {
   const entryKey = levels[0]?.key ?? "foundation";
 
   const [thumb, setThumb] = useState<File | null>(null);
+  const [courseType, setCourseType] = useState<"progressive" | "miscellaneous">("progressive");
   const [level, setLevel] = useState(entryKey);
   const [maxLevel, setMaxLevel] = useState(entryKey);
 
@@ -24,7 +26,8 @@ export default function NewCoursePage() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     fd.set("level", level);
-    fd.set("maxLevel", maxLevel);
+    // Standalone courses sit at ONE level — no level range is sent.
+    if (courseType === "progressive") fd.set("maxLevel", maxLevel);
     if (thumb) fd.append("thumbnail", thumb);
     create.mutate(fd, { onSuccess: (course) => router.push(`/admin/courses/${course._id}`) });
   };
@@ -83,26 +86,36 @@ export default function NewCoursePage() {
               <div className="h-px w-full bg-ink-100" />
 
               <Field label="Course type">
-                <select name="courseType" defaultValue="progressive" className="input w-full">
+                <select
+                  name="courseType"
+                  value={courseType}
+                  onChange={(e) => setCourseType(e.target.value as "progressive" | "miscellaneous")}
+                  className="input w-full"
+                >
                   <option value="progressive">Progressive (structured path)</option>
                   <option value="miscellaneous">Miscellaneous (standalone)</option>
                 </select>
               </Field>
 
+              {/* Progressive courses span a level RANGE; standalone courses sit at ONE level. */}
               <div className="space-y-5 pt-2">
                 <div>
-                  <span className="mb-2 block text-sm font-semibold text-ink-800">Course starting level</span>
+                  <span className="mb-2 block text-sm font-semibold text-ink-800">
+                    {courseType === "progressive" ? "Course starting level" : "Course level"}
+                  </span>
                   <div className="rounded-xl border border-ink-200 bg-ink-50/50 p-4">
                     <LevelSlider levels={levels} value={level} onChange={setLevel} />
                   </div>
                 </div>
 
-                <div>
-                  <span className="mb-2 block text-sm font-semibold text-ink-800">Highest attainable level (progressive path)</span>
-                  <div className="rounded-xl border border-ink-200 bg-ink-50/50 p-4">
-                    <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
+                {courseType === "progressive" && (
+                  <div>
+                    <span className="mb-2 block text-sm font-semibold text-ink-800">Highest attainable level</span>
+                    <div className="rounded-xl border border-ink-200 bg-ink-50/50 p-4">
+                      <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -136,15 +149,21 @@ export default function NewCoursePage() {
               
               <Field label="Course Thumbnail">
                 <div className="flex flex-col gap-3 rounded-lg border border-dashed border-ink-300 bg-ink-50/50 p-5">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => setThumb(e.target.files?.[0] ?? null)} 
-                    className="block w-full text-sm text-ink-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200 cursor-pointer transition-colors" 
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,.gif,.avif,image/*"
+                    onChange={(e) => setThumb(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-ink-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200 cursor-pointer transition-colors"
                   />
                   <p className="text-[11px] sm:text-xs text-ink-400">
-                    Upload a 16:9 image to represent this course. Max 2MB.
+                    Upload a 16:9 image to represent this course. Formats: PNG, JPG, WEBP, GIF, AVIF · no size limit.
                   </p>
+                  {/* Selected file's name, format + size, shown before/after the upload. */}
+                  {thumb && (
+                    <p className="text-[11px] sm:text-xs font-medium text-pitch-700">
+                      Selected: {thumb.name} · {formatLabel(undefined, thumb.name)} · {formatBytes(thumb.size)}
+                    </p>
+                  )}
                 </div>
               </Field>
             </div>

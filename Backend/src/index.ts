@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-import fileUpload from "express-fileupload";
 import helmet from "helmet";
 
 import { env } from "./config/env";
@@ -57,13 +56,9 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 if (env.NODE_ENV === "development") app.use(morgan("dev"));
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp/",
-    limits: { fileSize: 200 * 1024 * 1024 }, // 200MB for course videos
-  })
-);
+// NOTE: multipart parsing is NOT mounted app-wide. The admin upload routes mount
+// middleware/uploads.uploadParser AFTER their auth checks, so unauthenticated
+// requests can never spool file bodies to disk.
 
 // ── Health ───────────────────────────────────────────────
 app.get("/api/v1/health", (_req, res) => {

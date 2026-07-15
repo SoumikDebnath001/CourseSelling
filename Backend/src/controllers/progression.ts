@@ -4,6 +4,7 @@ import { UserCategoryProgress } from "../models/UserCategoryProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
 import { Category } from "../models/Category";
 import { getLevels } from "../utils/progression";
+import { ensureCertificateSerial } from "../utils/certificates";
 import { sortLevels, levelLabel } from "../config/levels";
 
 /**
@@ -64,6 +65,10 @@ export const myCertificates = asyncHandler(async (req: Request, res: Response) =
     .populate("category", "name slug")
     .sort({ issuedAt: -1 })
     .lean();
+  // Backfill permanent ids for certificates earned before serials existed.
+  for (const c of certs) {
+    if (!c.serial) c.serial = await ensureCertificateSerial(c);
+  }
   res.json({ success: true, certificates: certs });
 });
 

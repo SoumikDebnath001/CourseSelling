@@ -25,7 +25,7 @@ export interface ICourse extends Document {
   slug: string;
   courseDescription: string;
   whatYouWillLearn?: string;
-  thumbnail?: { url: string; publicId: string };
+  thumbnail?: { url: string; publicId: string; size?: number; format?: string };
   price: number;
   tags: string[];
   category?: Types.ObjectId;
@@ -37,6 +37,8 @@ export interface ICourse extends Document {
   instructions: string[];
   /** Accent colour used on the completion certificate (hex). */
   certificateColor: string;
+  /** Certificate layout students download: vertical (portrait) or horizontal (landscape). */
+  certificateOrientation: "portrait" | "landscape";
   /**
    * "progressive" = part of a structured Foundation→Level1→Level2 path within a category.
    * "miscellaneous" = standalone course unlocked by reaching a level in its category.
@@ -66,7 +68,7 @@ const courseSchema = new Schema<ICourse>(
     slug: { type: String, required: true, unique: true },
     courseDescription: { type: String, required: true },
     whatYouWillLearn: { type: String },
-    thumbnail: { url: String, publicId: String },
+    thumbnail: { url: String, publicId: String, size: Number, format: String },
     price: { type: Number, default: 0, min: 0 },
     tags: { type: [String], default: [] },
     category: { type: Schema.Types.ObjectId, ref: "Ca_Category" },
@@ -76,6 +78,7 @@ const courseSchema = new Schema<ICourse>(
     finalTest: { type: Schema.Types.ObjectId, ref: "Ca_Test", default: null },
     instructions: { type: [String], default: [] },
     certificateColor: { type: String, default: "#4f46e5" },
+    certificateOrientation: { type: String, enum: ["portrait", "landscape"], default: "portrait" },
     courseType: { type: String, enum: ["progressive", "miscellaneous"], default: "progressive" },
     level: { type: String, default: "foundation" },
     maxLevel: { type: String },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, Clock, Award, ListChecks, ShieldCheck } from "lucide-react";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { useFullCourse, useCompleteTopic } from "@/hooks/useLearn";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/store/auth";
 import { LearnTopbar } from "@/components/layout/LearnTopbar";
 import { CourseCurriculum } from "@/components/learn/CourseCurriculum";
@@ -29,6 +30,7 @@ function LearnInner({ courseId }: { courseId: string }) {
   const { data, isLoading } = useFullCourse(courseId);
   const complete = useCompleteTopic(courseId);
   const account = useAuth((s) => s.account);
+  const { settings } = useSettings();
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
   const [activeTest, setActiveTest] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,7 +47,7 @@ function LearnInner({ courseId }: { courseId: string }) {
   if (isLoading) return <FullScreenSpinner />;
   if (!data?.course) return <p className="p-10 text-center text-ink-400">Course not found or not enrolled.</p>;
 
-  const { course, sectionStatus, certificateLevels, physicalAssessments } = data;
+  const { course, sectionStatus, certificateLevels, certificateSerials, certificateIssuedAt, physicalAssessments } = data;
   const isSectioned = course.courseType === "progressive" && sectionStatus.length > 0;
   const totalTopics = allTopics.length;
   const completedCount = allTopics.filter((t) => completedSet.has(t._id)).length;
@@ -60,12 +62,21 @@ function LearnInner({ courseId }: { courseId: string }) {
   const earnedCertCount = sectionStatus.filter((s) => s.certificateEarned).length;
 
   // Generate a certificate for a given level (label appended for progressive sections).
-  const getCertificate = (label?: string) =>
-    generateCertificate({
+  // Layout (vertical/horizontal) follows the admin's per-course setting; the printed
+  // certificate id is the permanent server-issued serial for that level.
+  const getCertificate = (label?: string, levelKey?: string) => {
+    const key = levelKey ?? course.level;
+    const issuedAt = certificateIssuedAt?.[key];
+    return generateCertificate({
       studentName: account?.name ?? "Student",
       courseName: label ? `${course.courseName} — ${label}` : course.courseName,
       color: course.certificateColor,
+      orientation: course.certificateOrientation ?? "portrait",
+      serial: certificateSerials?.[key],
+      date: issuedAt ? new Date(issuedAt) : undefined,
+      branding: settings.certificate,
     });
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-50">
@@ -199,7 +210,7 @@ function LearnInner({ courseId }: { courseId: string }) {
             onClose={() => setSidebarOpen(false)}
             sections={isSectioned ? sectionStatus : undefined}
             onApplyPhysical={(level, title) => { setPhysModal({ scope: "section", level, title }); setSidebarOpen(false); }}
-            onGetCertificate={(_level, label) => getCertificate(label)}
+            onGetCertificate={(level, label) => getCertificate(label, level)}
           />
         </aside>
       </div>

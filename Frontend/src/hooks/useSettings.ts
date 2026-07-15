@@ -31,10 +31,18 @@ export const DEFAULT_FOOTER_LINKS = [
   },
 ];
 
+/** Signatory block printed on certificates until the admin customises it. */
+export const DEFAULT_CERTIFICATE_BRANDING = {
+  coachName: "Coach David Obuya",
+  roleLine1: "High Performance Coach Level 3",
+  roleLine2: "ICC Tutor — Africa",
+};
+
 export const DEFAULT_SETTINGS: Settings = {
   platformName: "Cricket Academy",
   hero: {},
   foundation: {},
+  certificate: { ...DEFAULT_CERTIFICATE_BRANDING },
   footer: {},
   about: { images: [] },
   socials: {},
@@ -58,6 +66,7 @@ export function useSettings() {
         ...s,
         hero: { ...s.hero },
         foundation: { ...s.foundation },
+        certificate: { ...DEFAULT_CERTIFICATE_BRANDING, ...s.certificate },
         footer: { ...s.footer },
         about: { images: [], ...s.about },
         socials: { ...s.socials },
@@ -87,18 +96,18 @@ export function useUpdateSettings() {
   });
 }
 
-/** Admin: upload (and replace) the home-page intro video. */
-export function useUploadIntroVideo() {
+/** Admin: upload (and replace) the transparent PNG signature printed on certificates. */
+export function useUploadCertificateSignature() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (file: File) => {
       const fd = new FormData();
-      fd.append("video", file);
-      const { data } = await api.post<{ settings: Settings }>("/settings/intro-video", fd);
+      fd.append("signature", file);
+      const { data } = await api.post<{ settings: Settings }>("/settings/certificate-signature", fd);
       return data.settings;
     },
     onSuccess: () => {
-      toast.success("Intro video updated");
+      toast.success("Signature updated");
       qc.invalidateQueries({ queryKey: ["settings"] });
     },
     onError: (e) => toast.error(apiError(e)),

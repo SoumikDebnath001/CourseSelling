@@ -1,0 +1,12 @@
+7/16/2026, 1:08:58 AM
+❯ the user may form the old table /home/soumik/Work Space/W/new computer/CourseSelling/models  form here or from the new table only for online learner so pick the name to create qr from there aslo in this site where ever time is mentioned as well as in cirtificate mention the timezone according ot kenya and the whole website whoule run accordin to that time zone EAT            remove the file section form the admin pannel no need for that pannel instead of this where ever i am uploading something mention after uploading the size and fromat of the size eg. if i upload a signature after uploading i will be able to see that uploaded 4Mb file in sign.png like this
+===================================================
+7/15/2026, 11:51:03 PM
+1.mention size and format whic should be uploaded to the site in admin pannel each section it should be easy to navigate 
+2.qr code will contain  cirtificate generation date,Course Id,course name ,cirtifidate id,student name   and a public page add to the site where the user will go directly scanning the qr and they can see only this detail if the qr
+3.in admin pannel while creating a course if the progressive is selected then only it will show course starting level and Highest attainable level  this two section other wise these two will remain hidden and in case of standalone courses only course level will be shown and admin will select only one level
+4.hero slide no need to update remove the update option from the admin pannel as well 
+5.admin should be able to able to upload Coach David Obuya
+High Performance Coach Level 3
+ICC Tutor — Africa  this three thing manually while creating cirtificate and upload a bg less signature in png format mention besside the upload section cirtificate date and serial number should eb auto generated and according to kenya time also the audto generated crifificate id will start form OGR-2026-0001  and the year will be auto updated with year change
+===================================================

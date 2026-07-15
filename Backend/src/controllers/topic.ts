@@ -4,7 +4,7 @@ import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Module } from "../models/Module";
 import { Topic, IResource } from "../models/Topic";
-import { uploadFile, deleteFile } from "../utils/storage";
+import { uploadFile, deleteFile, assertAllowedFile } from "../utils/storage";
 
 export const createTopicSchema = z.object({
   moduleId: z.string().min(1),
@@ -18,38 +18,53 @@ function filesArray(f: UploadedFile | UploadedFile[] | undefined): UploadedFile[
   return Array.isArray(f) ? f : [f];
 }
 
+/** Only plain web links may be stored as link resources (no javascript:/data: URLs). */
+const isSafeLinkUrl = (url: unknown): url is string => typeof url === "string" && /^https?:\/\//i.test(url.trim());
+
 /** Admin: create a topic with a video upload (+ optional resource files / links). */
 export const createTopic = asyncHandler(async (req: Request, res: Response) => {
-  const { moduleId, title, description } = req.body as z.infer<typeof createTopicSchema>;
+  const { moduleId, title, description } = createTopicSchema.parse(req.body);
   const module = await Module.findById(moduleId);
   if (!module) throw new ApiError(404, "Module not found");
 
   const videoFile = req.files?.video as UploadedFile | undefined;
+  const resourceFiles = filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined);
+
+  // Validate every file's format BEFORE uploading anything (all-or-nothing).
+  if (videoFile) assertAllowedFile(videoFile, "video");
+  for (const f of resourceFiles) assertAllowedFile(f, "document");
+
   let videoUrl: string | undefined;
   let videoPublicId: string | undefined;
+  let videoName: string | undefined;
+  let videoSize: number | undefined;
+  let videoFormat: string | undefined;
   let timeDurationSec: number | undefined;
 
   if (videoFile) {
     const up = await uploadFile(videoFile, "videos");
     videoUrl = up.url;
     videoPublicId = up.key; // S3 object key (used for signing + deletes)
-  } else if (req.body.videoUrl) {
-    videoUrl = String(req.body.videoUrl); // allow pasting an existing URL
+    videoName = videoFile.name;
+    videoSize = up.size;
+    videoFormat = up.format;
+  } else if (isSafeLinkUrl(req.body.videoUrl)) {
+    videoUrl = String(req.body.videoUrl); // allow pasting an existing URL (https only)
   }
   // Duration is detected in the browser before upload and sent along.
   if (req.body.timeDurationSec) timeDurationSec = Math.round(Number(req.body.timeDurationSec)) || undefined;
 
   // Resource files
   const resources: IResource[] = [];
-  for (const file of filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined)) {
+  for (const file of resourceFiles) {
     const up = await uploadFile(file, "resources");
-    resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file" });
+    resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file", size: up.size, format: up.format, mimeType: up.mimeType });
   }
   // Resource links (JSON array of {name,url})
   if (req.body.links) {
     try {
       const links = JSON.parse(req.body.links) as { name: string; url: string }[];
-      for (const l of links) if (l.url) resources.push({ name: l.name || l.url, url: l.url, type: "link" });
+      for (const l of links) if (isSafeLinkUrl(l.url)) resources.push({ name: l.name || l.url, url: l.url, type: "link" });
     } catch {
       /* ignore malformed links */
     }
@@ -85,24 +100,31 @@ export const updateTopic = asyncHandler(async (req: Request, res: Response) => {
   if (req.body.points !== undefined) topic.points = Number(req.body.points) || 0;
 
   const videoFile = req.files?.video as UploadedFile | undefined;
+  const resourceFiles = filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined);
+  if (videoFile) assertAllowedFile(videoFile, "video");
+  for (const f of resourceFiles) assertAllowedFile(f, "document");
+
   if (videoFile) {
     await deleteFile(topic.videoPublicId);
     const up = await uploadFile(videoFile, "videos");
     topic.videoUrl = up.url;
     topic.videoPublicId = up.key;
+    topic.videoName = videoFile.name;
+    topic.videoSize = up.size;
+    topic.videoFormat = up.format;
   }
   if (req.body.timeDurationSec) {
     topic.timeDurationSec = Math.round(Number(req.body.timeDurationSec)) || topic.timeDurationSec;
   }
 
-  for (const file of filesArray(req.files?.resources as UploadedFile | UploadedFile[] | undefined)) {
+  for (const file of resourceFiles) {
     const up = await uploadFile(file, "resources");
-    topic.resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file" });
+    topic.resources.push({ name: file.name, url: up.url, publicId: up.key, type: "file", size: up.size, format: up.format, mimeType: up.mimeType });
   }
   if (req.body.links) {
     try {
       const links = JSON.parse(req.body.links) as { name: string; url: string }[];
-      for (const l of links) if (l.url) topic.resources.push({ name: l.name || l.url, url: l.url, type: "link" });
+      for (const l of links) if (isSafeLinkUrl(l.url)) topic.resources.push({ name: l.name || l.url, url: l.url, type: "link" });
     } catch {
       /* ignore */
     }

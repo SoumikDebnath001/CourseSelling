@@ -37,6 +37,18 @@ export const paymentLimiter = rateLimit({
   message: json("Too many payment attempts. Please wait a few minutes and try again."),
 });
 
+/**
+ * Public certificate verification (QR scans): generous enough for humans,
+ * tight enough that sequential ids can't be enumerated in bulk.
+ */
+export const verifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30, // per IP per window
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: json("Too many verification requests. Please try again in a few minutes."),
+});
+
 /** A sane default ceiling for the rest of the API. */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

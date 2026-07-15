@@ -10,6 +10,7 @@ import { ExistingUser } from "../models/external/ExistingUser";
 import { OnlinePlatformUser } from "../models/OnlinePlatformUser";
 import { UserCategoryProgress } from "../models/UserCategoryProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
+import { CertificateIssued } from "../models/CertificateIssued";
 import { AdminOverrideLog } from "../models/AdminOverrideLog";
 import { CourseAccessGrant } from "../models/CourseAccessGrant";
 import { getLevels, getOrCreateCategoryProgress, recomputeLevelOnDoc } from "../utils/progression";
@@ -275,4 +276,29 @@ export const analytics = asyncHandler(async (_req: Request, res: Response) => {
       entryLevelLearners: Math.max(0, distinctTotal.length - distinctAdvanced.length),
     },
   });
+});
+
+/**
+ * Admin: the permanent registry of issued certificate ids (OGR-YEAR-0001).
+ * One row per earned certificate — the id never changes across re-downloads.
+ */
+export const listIssuedCertificates = asyncHandler(async (req: Request, res: Response) => {
+  const search = req.query.search ? String(req.query.search) : "";
+  const filter: Record<string, unknown> = search
+    ? {
+        $or: [
+          { certificateId: { $regex: search, $options: "i" } },
+          { studentName: { $regex: search, $options: "i" } },
+          { studentEmail: { $regex: search, $options: "i" } },
+          { courseName: { $regex: search, $options: "i" } },
+        ],
+      }
+    : {};
+
+  const certificates = await CertificateIssued.find(filter)
+    .sort({ issuedAt: -1 })
+    .limit(500)
+    .lean();
+
+  res.json({ success: true, certificates });
 });

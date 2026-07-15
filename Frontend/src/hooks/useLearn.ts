@@ -15,6 +15,10 @@ interface FullCourseResponse {
   progress: Progress;
   sectionStatus: SectionStatus[];
   certificateLevels: string[];
+  /** Permanent certificate id per earned level (level key → OGR-YEAR-0001). */
+  certificateSerials: Record<string, string>;
+  /** ISO issue date per earned level — the date printed on the certificate. */
+  certificateIssuedAt: Record<string, string>;
   physicalAssessments: PhysicalAssessmentEntry[];
 }
 

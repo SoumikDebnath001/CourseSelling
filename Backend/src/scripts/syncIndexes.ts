@@ -23,6 +23,7 @@ import { RatingReview } from "../models/RatingReview";
 import { OnlinePlatformUser } from "../models/OnlinePlatformUser";
 import { UserCategoryProgress } from "../models/UserCategoryProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
+import { CertificateIssued } from "../models/CertificateIssued";
 import { ProgressionLog } from "../models/ProgressionLog";
 import { AdminOverrideLog } from "../models/AdminOverrideLog";
 import { CourseAccessGrant } from "../models/CourseAccessGrant";
@@ -42,6 +43,7 @@ const ownedModels = [
   RatingReview,
   UserCategoryProgress,
   CertificateRecord,
+  CertificateIssued,
   ProgressionLog,
   AdminOverrideLog,
   CourseAccessGrant,

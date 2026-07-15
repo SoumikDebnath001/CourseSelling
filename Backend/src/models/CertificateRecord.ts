@@ -19,6 +19,10 @@ export interface ICertificateRecord extends Document {
   courseName: string;
   categoryName?: string;
   certificateColor: string;
+  /** Layout snapshot ("portrait" | "landscape") the student downloads this certificate in. */
+  certificateOrientation?: string;
+  /** Permanent certificate id (OGR-YEAR-0001) — copy of the CertificateIssued registry entry. */
+  serial?: string;
   issuedAt: Date;
 }
 
@@ -32,6 +36,8 @@ const schema = new Schema<ICertificateRecord>(
     courseName: { type: String, required: true },
     categoryName: { type: String },
     certificateColor: { type: String, default: "#4f46e5" },
+    certificateOrientation: { type: String, enum: ["portrait", "landscape"], default: "portrait" },
+    serial: { type: String },
     issuedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

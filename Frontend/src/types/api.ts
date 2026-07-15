@@ -36,6 +36,20 @@ export interface Settings {
     websiteUrl?: string;
     youtubeUrl?: string;
     imageUrl?: string;
+    imageName?: string;
+    imageSize?: number;
+    imageFormat?: string;
+  };
+  /** Certificate branding — the signatory block + uploaded transparent PNG signature. */
+  certificate: {
+    coachName?: string;
+    roleLine1?: string;
+    roleLine2?: string;
+    signatureUrl?: string;
+    signaturePublicId?: string;
+    signatureName?: string;
+    signatureSize?: number;
+    signatureFormat?: string;
   };
   footer: {
     about?: string;
@@ -44,7 +58,7 @@ export interface Settings {
     title?: string;
     intro?: string;
     body?: string;
-    images: { url?: string; publicId?: string }[];
+    images: { url?: string; publicId?: string; name?: string; size?: number; format?: string }[];
   };
   socials: {
     whatsapp?: string;
@@ -89,6 +103,10 @@ export interface Resource {
   name: string;
   url?: string;
   type: "pdf" | "link" | "file" | "image";
+  /** Size in bytes of the uploaded file (absent for links / legacy uploads). */
+  size?: number;
+  /** Lowercase file extension, e.g. "pdf". */
+  format?: string;
   locked?: boolean;
 }
 
@@ -98,6 +116,10 @@ export interface Topic {
   description?: string;
   order: number;
   videoUrl?: string;
+  /** Original filename / size / format of the uploaded video (admin builder display). */
+  videoName?: string;
+  videoSize?: number;
+  videoFormat?: string;
   timeDurationSec?: number;
   resources: Resource[];
   commentCount: number;
@@ -152,6 +174,8 @@ export interface Course {
   finalTest?: TestRef | null;
   instructions: string[];
   certificateColor?: string;
+  /** Certificate layout students download: vertical (portrait) or horizontal (landscape). */
+  certificateOrientation?: "portrait" | "landscape";
   courseType: CourseType;
   level: string;
   maxLevel?: string;
@@ -220,6 +244,9 @@ export interface Certificate {
   courseName: string;
   categoryName?: string;
   certificateColor: string;
+  certificateOrientation?: "portrait" | "landscape";
+  /** Permanent certificate id (OGR-YEAR-0001) — identical on every re-download. */
+  serial?: string;
   issuedAt: string;
 }
 

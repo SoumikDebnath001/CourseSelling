@@ -31,15 +31,21 @@ const r2Host = (): string => `${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 const encodeKey = (key: string): string => key.split("/").map(encodeURIComponent).join("/");
 
 async function signedRequest(
-  method: "PUT" | "DELETE",
+  method: "PUT" | "DELETE" | "POST" | "HEAD",
   key: string,
   body: Buffer,
-  contentType?: string
+  contentType?: string,
+  query?: Record<string, string>
 ): Promise<Response> {
   const host = r2Host();
   const canonicalUri = `/${env.R2_BUCKET}/${encodeKey(key)}`;
   const { amzdate, datestamp } = amzDate(new Date());
   const payloadHash = sha256Hex(body);
+
+  const canonicalQuery = Object.keys(query ?? {})
+    .sort()
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(query![k])}`)
+    .join("&");
 
   const headers: Record<string, string> = {
     host,
@@ -51,7 +57,7 @@ async function signedRequest(
   const signedKeys = Object.keys(headers).sort();
   const canonicalHeaders = signedKeys.map((k) => `${k}:${headers[k]}\n`).join("");
   const signedHeaders = signedKeys.join(";");
-  const canonicalRequest = [method, canonicalUri, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+  const canonicalRequest = [method, canonicalUri, canonicalQuery, canonicalHeaders, signedHeaders, payloadHash].join("\n");
 
   const scope = `${datestamp}/${REGION}/${SERVICE}/aws4_request`;
   const stringToSign = ["AWS4-HMAC-SHA256", amzdate, scope, sha256Hex(canonicalRequest)].join("\n");
@@ -60,10 +66,10 @@ async function signedRequest(
     `AWS4-HMAC-SHA256 Credential=${env.R2_ACCESS_KEY_ID}/${scope}, ` +
     `SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-  return fetch(`https://${host}${canonicalUri}`, {
+  return fetch(`https://${host}${canonicalUri}${canonicalQuery ? `?${canonicalQuery}` : ""}`, {
     method,
     headers: { ...headers, Authorization: authorization },
-    body: method === "PUT" ? body : undefined,
+    body: method === "PUT" || method === "POST" ? body : undefined,
   });
 }
 
@@ -76,6 +82,65 @@ export async function r2DeleteObject(key: string): Promise<void> {
   const res = await signedRequest("DELETE", key, Buffer.alloc(0));
   if (!res.ok && res.status !== 404) {
     throw new Error(`R2 delete failed (${res.status}): ${await res.text()}`);
+  }
+}
+
+/** Object metadata (size in bytes + content type) without downloading it. Null when absent. */
+export async function r2HeadObject(key: string): Promise<{ size?: number; contentType?: string } | null> {
+  const res = await signedRequest("HEAD", key, Buffer.alloc(0));
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`R2 head failed (${res.status})`);
+  const len = res.headers.get("content-length");
+  return {
+    size: len ? Number(len) : undefined,
+    contentType: res.headers.get("content-type") ?? undefined,
+  };
+}
+
+/* ── Multipart upload (for large files, streamed part-by-part from disk) ── */
+
+export async function r2CreateMultipartUpload(key: string, contentType?: string): Promise<string> {
+  const res = await signedRequest("POST", key, Buffer.alloc(0), contentType, { uploads: "" });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`R2 create multipart failed (${res.status}): ${text}`);
+  const uploadId = /<UploadId>([^<]+)<\/UploadId>/.exec(text)?.[1];
+  if (!uploadId) throw new Error("R2 create multipart: no UploadId in response");
+  return uploadId;
+}
+
+export async function r2UploadPart(key: string, uploadId: string, partNumber: number, body: Buffer): Promise<string> {
+  const res = await signedRequest("PUT", key, body, undefined, {
+    partNumber: String(partNumber),
+    uploadId,
+  });
+  if (!res.ok) throw new Error(`R2 upload part ${partNumber} failed (${res.status}): ${await res.text()}`);
+  const etag = res.headers.get("etag");
+  if (!etag) throw new Error(`R2 upload part ${partNumber}: no ETag returned`);
+  return etag;
+}
+
+export async function r2CompleteMultipartUpload(
+  key: string,
+  uploadId: string,
+  parts: { partNumber: number; etag: string }[]
+): Promise<void> {
+  const xml =
+    `<CompleteMultipartUpload>` +
+    parts.map((p) => `<Part><PartNumber>${p.partNumber}</PartNumber><ETag>${p.etag}</ETag></Part>`).join("") +
+    `</CompleteMultipartUpload>`;
+  const res = await signedRequest("POST", key, Buffer.from(xml), "application/xml", { uploadId });
+  const text = await res.text();
+  // S3 can return 200 with an <Error> body — treat that as failure too.
+  if (!res.ok || text.includes("<Error>")) {
+    throw new Error(`R2 complete multipart failed (${res.status}): ${text}`);
+  }
+}
+
+export async function r2AbortMultipartUpload(key: string, uploadId: string): Promise<void> {
+  try {
+    await signedRequest("DELETE", key, Buffer.alloc(0), undefined, { uploadId });
+  } catch {
+    /* best-effort */
   }
 }
 

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, BookOpen, FolderTree, Users, Settings, ExternalLink, Menu, X, LogOut, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, BookOpen, FolderTree, Users, Settings, ExternalLink, Menu, X, LogOut, ClipboardCheck, Award } from "lucide-react";
 import { gsap } from "gsap";
 import toast from "react-hot-toast";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -17,6 +17,7 @@ const nav = [
   { href: "/admin/courses", label: "Courses", icon: BookOpen },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/physical-assessments", label: "Physical Assessments", icon: ClipboardCheck },
+  { href: "/admin/certificates", label: "Certificates", icon: Award },
   { href: "/admin/students", label: "Users", icon: Users },
   { href: "/admin/settings", label: "Site Settings", icon: Settings },
   { href: "/", label: "Back to Site", icon: ExternalLink, exact: true },

@@ -9,6 +9,7 @@ import { CertificateRecord } from "../models/CertificateRecord";
 import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
 import { fulfilEnrollment } from "../services/fulfilment";
 import { isCourseUnlockedForUser, getLevels } from "../utils/progression";
+import { ensureCertificateSerial, nairobiYear } from "../utils/certificates";
 import { levelLabel } from "../config/levels";
 import { signThumbnail, signCourseAssets } from "../utils/storage";
 import { canAccessCourseContent } from "../utils/access";
@@ -98,8 +99,8 @@ export const myTransactions = asyncHandler(async (req: Request, res: Response) =
       const course = e.course as unknown as { _id: string; courseName: string; slug: string };
       return {
         id: e._id.toString(),
-        // Stable, human-friendly invoice number derived from the enrollment id + date.
-        invoiceNo: `INV-${new Date(e.enrolledAt).getFullYear()}-${e._id.toString().slice(-6).toUpperCase()}`,
+        // Stable, human-friendly invoice number derived from the enrollment id + date (Kenya year).
+        invoiceNo: `INV-${nairobiYear(new Date(e.enrolledAt))}-${e._id.toString().slice(-6).toUpperCase()}`,
         course: { _id: course._id, courseName: course.courseName, slug: course.slug },
         amountPaid: e.amountPaid,
         paymentRef: e.paymentRef,
@@ -145,7 +146,9 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
   const passedTests = new Set((progress?.passedTests ?? []).map(String));
 
   const [certs, apps, levels] = await Promise.all([
-    CertificateRecord.find({ userId, course: course._id }).select("level").lean(),
+    CertificateRecord.find({ userId, course: course._id })
+      .select("userId course courseName level label serial issuedAt")
+      .lean(),
     PhysicalAssessmentApplication.find({ userId, course: course._id })
       .select("level scope status whatsappCountryCode whatsappNumber")
       .lean(),
@@ -153,6 +156,16 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
   ]);
   const certLevels = new Set(certs.map((c) => c.level));
   const appByLevel = new Map(apps.map((a) => [a.level, a]));
+
+  // Permanent certificate ids per earned level (backfilled for old records) so the
+  // printed id never changes however many times the student downloads. The issue
+  // date rides along so the printed certificate shows the real award date.
+  const certificateSerials: Record<string, string> = {};
+  const certificateIssuedAt: Record<string, string> = {};
+  for (const c of certs) {
+    certificateSerials[c.level] = c.serial ?? (await ensureCertificateSerial(c));
+    if (c.issuedAt) certificateIssuedAt[c.level] = new Date(c.issuedAt).toISOString();
+  }
 
   // Per-module completion: a module with a published test is done when the test is passed;
   // otherwise when all its topics are complete (mirrors creditProgress).
@@ -205,6 +218,8 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
     },
     sectionStatus,
     certificateLevels: [...certLevels],
+    certificateSerials,
+    certificateIssuedAt,
     physicalAssessments: apps.map((a) => ({
       level: a.level,
       scope: a.scope,

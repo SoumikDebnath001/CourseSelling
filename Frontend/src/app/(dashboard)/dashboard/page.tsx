@@ -10,10 +10,12 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { DashboardSidebar, type DashView } from "@/components/dashboard/DashboardSidebar";
 import { useMyEnrolledCourses, useMyTransactions } from "@/hooks/useLearn";
 import { useMyProgression, useMyCertificates } from "@/hooks/useProgression";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuth, type AuthAccount } from "@/store/auth";
 import { Spinner } from "@/components/ui/Spinner";
 import { generateCertificate } from "@/lib/certificate";
 import { formatKES } from "@/lib/currency";
+import { formatKenyaDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { EnrolledCourse, Transaction, CategoryProgress } from "@/types/api";
 
@@ -327,7 +329,8 @@ function StatusBadge({ status }: { status: Transaction["status"] }) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  // All dates on the platform are shown in Kenya time (EAT).
+  return formatKenyaDate(d);
 }
 
 function formatAmount(amount: number) {
@@ -574,6 +577,7 @@ function CertificationsPanel() {
   const account = useAuth((s) => s.account);
   const { data: certs, isLoading } = useMyCertificates();
   const { data: prog } = useMyProgression();
+  const { settings } = useSettings();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [sortNewest, setSortNewest] = useState(true);
@@ -666,6 +670,9 @@ function CertificationsPanel() {
                   courseName: c.courseName,
                   color: c.certificateColor,
                   date: new Date(c.issuedAt),
+                  orientation: c.certificateOrientation ?? "portrait",
+                  serial: c.serial,
+                  branding: settings.certificate,
                 })
               }
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-50"

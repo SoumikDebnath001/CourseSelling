@@ -3,19 +3,21 @@ import { z } from "zod";
 import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Settings, ISettings } from "../models/Settings";
-import { uploadFile, deleteFile, signedAssetUrl } from "../utils/storage";
+import { uploadFile, deleteFile, signedAssetUrl, assertAllowedFile } from "../utils/storage";
 
-/** Replace stored intro-video / foundation-image / about-image URLs with fresh presigned ones, in place. */
+/** Replace stored media URLs (intro video, images, certificate signature) with fresh presigned ones, in place. */
 function signSettingsAssets(s: {
   hero?: { introVideoUrl?: string; introVideoPublicId?: string };
   foundation?: { imageUrl?: string; imagePublicId?: string };
   about?: { images?: { url?: string; publicId?: string }[] };
+  certificate?: { signatureUrl?: string; signaturePublicId?: string };
 }): void {
   if (s.hero) s.hero.introVideoUrl = signedAssetUrl(s.hero.introVideoPublicId, s.hero.introVideoUrl);
   if (s.foundation) s.foundation.imageUrl = signedAssetUrl(s.foundation.imagePublicId, s.foundation.imageUrl);
   if (s.about?.images) {
     for (const img of s.about.images) img.url = signedAssetUrl(img.publicId, img.url);
   }
+  if (s.certificate) s.certificate.signatureUrl = signedAssetUrl(s.certificate.signaturePublicId, s.certificate.signatureUrl);
 }
 
 /** Accepts a URL or an empty string (so admins can clear a field). */
@@ -26,13 +28,13 @@ export const settingsSchema = z.object({
   email: z.string().trim().email().or(z.literal("")).optional(),
   contactPhone: z.string().trim().optional(),
   place: z.string().trim().optional(),
-  hero: z
+  // NOTE: the home hero is intentionally NOT updatable any more — the "hero" block is
+  // absent from this schema, so any hero payload is stripped before it reaches the model.
+  certificate: z
     .object({
-      badge: z.string().trim().optional(),
-      title: z.string().trim().optional(),
-      highlight: z.string().trim().optional(),
-      subtitle: z.string().trim().optional(),
-      videoUrl: urlOrEmpty.optional(),
+      coachName: z.string().trim().max(80).optional(),
+      roleLine1: z.string().trim().max(120).optional(),
+      roleLine2: z.string().trim().max(120).optional(),
     })
     .optional(),
   foundation: z
@@ -131,11 +133,11 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
     settings.markModified("levels");
   }
 
-  if (body.hero) {
-    for (const k of ["badge", "title", "highlight", "subtitle", "videoUrl"] as const) {
-      if (body.hero[k] !== undefined) settings.hero[k] = body.hero[k];
+  if (body.certificate) {
+    for (const k of ["coachName", "roleLine1", "roleLine2"] as const) {
+      if (body.certificate[k] !== undefined) settings.certificate[k] = body.certificate[k];
     }
-    settings.markModified("hero");
+    settings.markModified("certificate");
   }
   if (body.foundation) {
     for (const k of ["websiteUrl", "youtubeUrl", "imageUrl"] as const) {
@@ -181,18 +183,25 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   res.json({ success: true, settings: out });
 });
 
-/** Admin: upload (and replace) the intro video shown on the home page. */
-export const uploadIntroVideo = asyncHandler(async (req: Request, res: Response) => {
-  const file = req.files?.video as UploadedFile | undefined;
-  if (!file) throw new ApiError(400, "No video file provided");
+/**
+ * Admin: upload (and replace) the certificate signature — a background-less
+ * (transparent) PNG printed on every completion certificate. PNG only, max 10MB.
+ */
+export const uploadCertificateSignature = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.files?.signature as UploadedFile | undefined;
+  if (!file) throw new ApiError(400, "No signature file provided");
+  assertAllowedFile(file, "signature", { maxBytes: 10 * 1024 * 1024 });
 
   const settings = await Settings.getSingleton();
-  await deleteFile(settings.hero?.introVideoPublicId);
+  await deleteFile(settings.certificate?.signaturePublicId);
 
-  const up = await uploadFile(file, "intro");
-  settings.hero.introVideoUrl = up.url;
-  settings.hero.introVideoPublicId = up.key;
-  settings.markModified("hero");
+  const up = await uploadFile(file, "certificate");
+  settings.certificate.signatureUrl = up.url;
+  settings.certificate.signaturePublicId = up.key;
+  settings.certificate.signatureName = file.name;
+  settings.certificate.signatureSize = up.size;
+  settings.certificate.signatureFormat = up.format;
+  settings.markModified("certificate");
   await settings.save();
 
   const out = settings.toObject();
@@ -204,6 +213,7 @@ export const uploadIntroVideo = asyncHandler(async (req: Request, res: Response)
 export const uploadFoundationImage = asyncHandler(async (req: Request, res: Response) => {
   const file = req.files?.image as UploadedFile | undefined;
   if (!file) throw new ApiError(400, "No image file provided");
+  assertAllowedFile(file, "image");
 
   const settings = await Settings.getSingleton();
   await deleteFile(settings.foundation?.imagePublicId);
@@ -211,6 +221,9 @@ export const uploadFoundationImage = asyncHandler(async (req: Request, res: Resp
   const up = await uploadFile(file, "foundation");
   settings.foundation.imageUrl = up.url;
   settings.foundation.imagePublicId = up.key;
+  settings.foundation.imageName = file.name;
+  settings.foundation.imageSize = up.size;
+  settings.foundation.imageFormat = up.format;
   settings.markModified("foundation");
   await settings.save();
 
@@ -223,11 +236,12 @@ export const uploadFoundationImage = asyncHandler(async (req: Request, res: Resp
 export const uploadAboutImage = asyncHandler(async (req: Request, res: Response) => {
   const file = req.files?.image as UploadedFile | undefined;
   if (!file) throw new ApiError(400, "No image file provided");
+  assertAllowedFile(file, "image");
 
   const settings = await Settings.getSingleton();
   const up = await uploadFile(file, "about");
   if (!settings.about) settings.about = { images: [] } as ISettings["about"];
-  settings.about.images.push({ url: up.url, publicId: up.key });
+  settings.about.images.push({ url: up.url, publicId: up.key, name: file.name, size: up.size, format: up.format });
   settings.markModified("about");
   await settings.save();
 

@@ -7,7 +7,7 @@ import { Module } from "../models/Module";
 import { Topic } from "../models/Topic";
 import { Enrollment } from "../models/Enrollment";
 import { uniqueSlug } from "../utils/slug";
-import { uploadFile, deleteFile, signThumbnail, signCourseAssets } from "../utils/storage";
+import { uploadFile, deleteFile, signThumbnail, signCourseAssets, assertAllowedFile } from "../utils/storage";
 import { getLevels } from "../utils/progression";
 import { levelsInRange } from "../config/levels";
 
@@ -35,6 +35,16 @@ async function seedSections(course: InstanceType<typeof Course>): Promise<void> 
   }) as never;
 }
 
+/**
+ * Multipart forms send booleans as "true"/"false" strings — coerce them faithfully
+ * ("false" must become false, unlike z.coerce.boolean()). undefined passes through
+ * so .partial() updates leave the field untouched.
+ */
+const formBoolean = z.preprocess(
+  (v) => (v === undefined ? undefined : v === true || v === "true" || v === "1"),
+  z.boolean()
+);
+
 export const createCourseSchema = z.object({
   courseName: z.string().min(3),
   courseDescription: z.string().min(10),
@@ -45,11 +55,12 @@ export const createCourseSchema = z.object({
   category: z.string().min(1, "A Path / Category is required"),
   instructions: z.union([z.string(), z.array(z.string())]).optional(),
   certificateColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #4f46e5").optional(),
+  certificateOrientation: z.enum(["portrait", "landscape"]).optional(),
   courseType: z.enum(["progressive", "miscellaneous"]).default("progressive"),
   level: z.string().min(1).default("foundation"),
   maxLevel: z.string().optional(),
   points: z.coerce.number().int().min(0).default(0),
-  requiresPhysicalAssessment: z.coerce.boolean().optional(),
+  requiresPhysicalAssessment: formBoolean.optional(),
 });
 
 function toArray(v?: string | string[]): string[] {
@@ -66,7 +77,7 @@ function toArray(v?: string | string[]): string[] {
 
 /** Admin: create a Draft course (optional thumbnail upload). */
 export const createCourse = asyncHandler(async (req: Request, res: Response) => {
-  const body = req.body as z.infer<typeof createCourseSchema>;
+  const body = createCourseSchema.parse(req.body);
   const thumbFile = req.files?.thumbnail as UploadedFile | undefined;
 
   // Mandatory Path / Category — no orphan courses allowed.
@@ -76,8 +87,9 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
 
   let thumbnail;
   if (thumbFile) {
+    assertAllowedFile(thumbFile, "image");
     const up = await uploadFile(thumbFile, "thumbnails");
-    thumbnail = { url: up.url, publicId: up.key };
+    thumbnail = { url: up.url, publicId: up.key, size: up.size, format: up.format };
   }
 
   const course = await Course.create({
@@ -90,9 +102,11 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
     instructions: toArray(body.instructions),
     category: body.category || undefined,
     certificateColor: body.certificateColor || undefined,
+    certificateOrientation: body.certificateOrientation || undefined,
     courseType: body.courseType ?? "progressive",
     level: body.level || "foundation",
-    maxLevel: body.maxLevel || undefined,
+    // Standalone (miscellaneous) courses sit at a single level — no level range.
+    maxLevel: (body.courseType ?? "progressive") === "miscellaneous" ? undefined : body.maxLevel || undefined,
     points: body.points ?? 0,
     requiresPhysicalAssessment: body.requiresPhysicalAssessment ?? false,
     thumbnail,
@@ -115,13 +129,14 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   const course = await Course.findById(req.params.id);
   if (!course) throw new ApiError(404, "Course not found");
 
-  const body = req.body as Partial<z.infer<typeof createCourseSchema>>;
+  const body = createCourseSchema.partial().parse(req.body);
   const thumbFile = req.files?.thumbnail as UploadedFile | undefined;
 
   if (thumbFile) {
+    assertAllowedFile(thumbFile, "image");
     await deleteFile(course.thumbnail?.publicId);
     const up = await uploadFile(thumbFile, "thumbnails");
-    course.thumbnail = { url: up.url, publicId: up.key };
+    course.thumbnail = { url: up.url, publicId: up.key, size: up.size, format: up.format };
   }
   if (body.courseName !== undefined) course.courseName = body.courseName;
   if (body.courseDescription !== undefined) course.courseDescription = body.courseDescription;
@@ -132,13 +147,16 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   if (body.tags !== undefined) course.tags = toArray(body.tags);
   if (body.instructions !== undefined) course.instructions = toArray(body.instructions);
   if (body.certificateColor !== undefined) course.certificateColor = body.certificateColor;
+  if (body.certificateOrientation !== undefined) course.certificateOrientation = body.certificateOrientation;
   if (body.courseType !== undefined) course.courseType = body.courseType;
   if (body.level !== undefined) course.level = body.level;
   if (body.maxLevel !== undefined) course.maxLevel = (body.maxLevel || undefined) as never;
   if (body.points !== undefined) course.points = Number(body.points);
   if (body.requiresPhysicalAssessment !== undefined) {
-    course.requiresPhysicalAssessment = Boolean(body.requiresPhysicalAssessment);
+    course.requiresPhysicalAssessment = body.requiresPhysicalAssessment;
   }
+  // Standalone (miscellaneous) courses have a single level — clear any stale range.
+  if (course.courseType === "miscellaneous") course.maxLevel = undefined;
 
   // Re-seed sections whenever the type or level range changes (preserves existing settings).
   if (body.courseType !== undefined || body.level !== undefined || body.maxLevel !== undefined) {

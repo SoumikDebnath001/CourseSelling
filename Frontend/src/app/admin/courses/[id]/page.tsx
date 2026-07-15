@@ -16,6 +16,9 @@ import {
 import { useSettings } from "@/hooks/useSettings";
 import { LevelSlider } from "@/components/course/LevelSlider";
 import { generateCertificate } from "@/lib/certificate";
+import { useUploads } from "@/store/uploads";
+import { formatBytes, formatLabel } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { Course, CourseSection, Module, TestRef } from "@/types/api";
 
 type TestTarget =
@@ -278,18 +281,37 @@ function ModuleCard({
       </div>
 
       <ul className="mt-3 space-y-1">
-        {module.topics.map((t) => (
-          <li key={t._id} className="flex items-center justify-between gap-2 rounded-lg bg-ink-50 px-3 py-2 text-sm">
-            <span className="flex min-w-0 items-center gap-2 text-ink-700">
-              <Video className="h-4 w-4 shrink-0 text-pitch-600" /> <span className="truncate">{t.title}</span>
-              {t.resources?.length > 0 && <span className="shrink-0 text-xs text-ink-400">· {t.resources.length} files</span>}
-            </span>
-            <span className="flex shrink-0 items-center gap-2">
-              <PointsInline label="pts" value={t.points ?? 0} onSave={(p) => onSaveTopicPoints(t._id, p)} />
-              <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
-            </span>
-          </li>
-        ))}
+        {module.topics.map((t) => {
+          const fileResources = t.resources?.filter((r) => r.type !== "link") ?? [];
+          return (
+            <li key={t._id} className="rounded-lg bg-ink-50 px-3 py-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-2 text-ink-700">
+                  <Video className="h-4 w-4 shrink-0 text-pitch-600" /> <span className="truncate">{t.title}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <PointsInline label="pts" value={t.points ?? 0} onSave={(p) => onSaveTopicPoints(t._id, p)} />
+                  <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                </span>
+              </div>
+              {/* What's uploaded on this topic — format + size for the video and each resource. */}
+              {(t.videoSize !== undefined || fileResources.length > 0) && (
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 pl-6 text-[11px] text-ink-400">
+                  {t.videoSize !== undefined && (
+                    <span title={t.videoName}>
+                      Video: {formatLabel(t.videoFormat, t.videoName)} · {formatBytes(t.videoSize)}
+                    </span>
+                  )}
+                  {fileResources.map((r, i) => (
+                    <span key={r._id ?? i} className="max-w-56 truncate" title={r.name}>
+                      {r.name} ({formatLabel(r.format, r.name)}{r.size !== undefined ? ` · ${formatBytes(r.size)}` : ""})
+                    </span>
+                  ))}
+                </div>
+              )}
+            </li>
+          );
+        })}
         {module.topics.length === 0 && <li className="px-3 py-2 text-xs text-ink-400">No topics yet.</li>}
       </ul>
 
@@ -323,9 +345,14 @@ function readVideoDuration(file: File): Promise<number | undefined> {
   });
 }
 
+/** Formats the server accepts, mirrored here so admins see them before uploading. */
+const VIDEO_ACCEPT = ".mp4,.mov,.m4v,.webm,.mkv,.avi,.mpeg,.mpg,.3gp,video/*";
+const RESOURCE_ACCEPT = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.rtf,.odt,.odp,.ods,.epub,.zip,.png,.jpg,.jpeg,.webp,.gif,.mp3,.wav,.mp4,.mov,.webm";
+
 function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: string; loading: boolean; onSubmit: (fd: FormData) => void; onCancel: () => void }) {
   const [video, setVideo] = useState<File | null>(null);
   const [resources, setResources] = useState<FileList | null>(null);
+  const currentUpload = useUploads((s) => s.uploads[0]);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -350,13 +377,37 @@ function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: str
       </label>
       <label className="block text-sm text-ink-600">
         <span className="mb-1 flex items-center gap-1 font-medium"><Upload className="h-4 w-4" /> Video file</span>
-        <input type="file" accept="video/*" onChange={(e) => setVideo(e.target.files?.[0] ?? null)} className="text-sm" />
+        <input type="file" accept={VIDEO_ACCEPT} onChange={(e) => setVideo(e.target.files?.[0] ?? null)} className="text-sm" />
+        <span className="mt-1 block text-xs text-ink-400">
+          Formats: MP4, MOV, M4V, WEBM, MKV, AVI, MPEG, 3GP · <b>no size limit</b>{video ? ` · selected: ${formatBytes(video.size)}` : ""}
+        </span>
       </label>
       <label className="block text-sm text-ink-600">
-        <span className="mb-1 font-medium">Resource files (PPT,PDF etc.)</span>
+        <span className="mb-1 font-medium">Resource files</span>
         <br />
-        <input type="file" multiple onChange={(e) => setResources(e.target.files)} className="text-sm" />
+        <input type="file" multiple accept={RESOURCE_ACCEPT} onChange={(e) => setResources(e.target.files)} className="text-sm" />
+        <span className="mt-1 block text-xs text-ink-400">
+          Formats: PDF, DOC(X), PPT(X), XLS(X), CSV, TXT, ZIP, images, audio, video clips · <b>no size limit</b>
+          {resources?.length ? ` · ${resources.length} selected (${formatBytes(Array.from(resources).reduce((n, f) => n + f.size, 0))})` : ""}
+        </span>
       </label>
+
+      {/* Live progress while the topic's files are uploading. */}
+      {loading && currentUpload && (
+        <div>
+          <div className="flex items-center justify-between text-xs font-medium text-ink-600">
+            <span>{currentUpload.status === "processing" ? "Processing on the server…" : "Uploading…"}</span>
+            <span>{currentUpload.progress}%</span>
+          </div>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+            <div
+              className={cn("h-full rounded-full bg-brand-500 transition-all", currentUpload.status === "processing" && "animate-pulse")}
+              style={{ width: `${currentUpload.progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <Button type="submit" loading={loading}>Add topic</Button>
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
@@ -388,7 +439,8 @@ function CourseSettingsCard({ course }: { course: Course }) {
     const fd = new FormData();
     fd.append("courseType", courseType);
     fd.append("level", level);
-    fd.append("maxLevel", maxLevel);
+    // Standalone courses sit at ONE level — the server clears any stale range.
+    if (courseType === "progressive") fd.append("maxLevel", maxLevel);
     fd.append("points", String(points));
     fd.append("requiresPhysicalAssessment", String(reqPhysical));
     update.mutate(fd);
@@ -417,15 +469,20 @@ function CourseSettingsCard({ course }: { course: Course }) {
           <input type="number" min={0} value={points} onChange={(e) => setPoints(Number(e.target.value))} className="input" />
         </label>
       </div>
-      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+      {/* Progressive courses span a level RANGE; standalone courses sit at ONE level. */}
+      <div className={cn("mt-4 grid gap-5", courseType === "progressive" && "sm:grid-cols-2")}>
         <div>
-          <span className="mb-1 block text-sm font-medium text-ink-700">Course level</span>
+          <span className="mb-1 block text-sm font-medium text-ink-700">
+            {courseType === "progressive" ? "Course starting level" : "Course level"}
+          </span>
           <LevelSlider levels={levels} value={level} onChange={setLevel} />
         </div>
-        <div>
-          <span className="mb-1 block text-sm font-medium text-ink-700">Highest attainable level (progressive path)</span>
-          <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
-        </div>
+        {courseType === "progressive" && (
+          <div>
+            <span className="mb-1 block text-sm font-medium text-ink-700">Highest attainable level</span>
+            <LevelSlider levels={levels} value={maxLevel} onChange={setMaxLevel} showDescription={false} />
+          </div>
+        )}
       </div>
 
       {courseType === "miscellaneous" ? (
@@ -512,16 +569,23 @@ function PointsInline({ label, value, onSave }: { label: string; value: number; 
 
 function CertificateCard({ course }: { course: Course }) {
   const update = useUpdateCourse(course._id);
+  const { settings } = useSettings();
   const [color, setColor] = useState(course.certificateColor ?? "#4f46e5");
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(course.certificateOrientation ?? "portrait");
+
+  const dirty =
+    color !== (course.certificateColor ?? "#4f46e5") ||
+    orientation !== (course.certificateOrientation ?? "portrait");
 
   const save = () => {
     const fd = new FormData();
     fd.append("certificateColor", color);
+    fd.append("certificateOrientation", orientation);
     update.mutate(fd);
   };
 
-  const preview = () =>
-    generateCertificate({ studentName: "Student Name", courseName: course.courseName, color });
+  const preview = (o: "portrait" | "landscape") =>
+    generateCertificate({ studentName: "Student Name", courseName: course.courseName, color, orientation: o, branding: settings.certificate });
 
   return (
     <div className="card mt-6 p-4">
@@ -529,7 +593,9 @@ function CertificateCard({ course }: { course: Course }) {
         <Award className="h-5 w-5 text-grape-600" />
         <div>
           <p className="font-semibold text-ink-900">Completion certificate</p>
-          <p className="text-xs text-ink-400">Pick the accent colour students see on their certificate.</p>
+          <p className="text-xs text-ink-400">
+            Pick the accent colour and the layout students download their certificate in.
+          </p>
         </div>
       </div>
 
@@ -543,11 +609,29 @@ function CertificateCard({ course }: { course: Course }) {
           />
           <span className="font-mono text-sm text-ink-600">{color.toUpperCase()}</span>
         </label>
-        <Button variant="ghost" onClick={preview}>
+
+        <div className="flex overflow-hidden rounded-lg border border-ink-200">
+          {(["portrait", "landscape"] as const).map((o) => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => setOrientation(o)}
+              className={
+                orientation === o
+                  ? "bg-grape-600 px-3 py-2 text-sm font-semibold text-white"
+                  : "bg-white px-3 py-2 text-sm font-medium text-ink-600 hover:bg-ink-50"
+              }
+            >
+              {o === "portrait" ? "Vertical" : "Horizontal"}
+            </button>
+          ))}
+        </div>
+
+        <Button variant="ghost" onClick={() => preview(orientation)}>
           <Eye className="h-4 w-4" /> Preview
         </Button>
-        <Button onClick={save} loading={update.isPending} disabled={color === (course.certificateColor ?? "#4f46e5")}>
-          Save colour
+        <Button onClick={save} loading={update.isPending} disabled={!dirty}>
+          Save
         </Button>
       </div>
     </div>

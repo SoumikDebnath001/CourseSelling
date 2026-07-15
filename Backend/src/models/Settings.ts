@@ -30,6 +30,25 @@ export interface ISettings extends Document {
     /** Uploaded foundation image shown on the home page (CDN url + storage key). */
     imageUrl?: string;
     imagePublicId?: string;
+    /** Original filename / size / format of the uploaded image (shown after upload). */
+    imageName?: string;
+    imageSize?: number;
+    imageFormat?: string;
+  };
+  /**
+   * Certificate branding, editable by the admin: the signatory block printed on every
+   * completion certificate, plus an uploaded background-less (transparent) PNG signature.
+   */
+  certificate: {
+    coachName?: string;
+    roleLine1?: string;
+    roleLine2?: string;
+    signatureUrl?: string;
+    signaturePublicId?: string;
+    /** Original filename / size / format of the uploaded signature (shown after upload). */
+    signatureName?: string;
+    signatureSize?: number;
+    signatureFormat?: string;
   };
   /** Footer copy edited from the admin panel. */
   footer: {
@@ -40,8 +59,8 @@ export interface ISettings extends Document {
     title?: string;
     intro?: string;
     body?: string;
-    /** Uploaded images shown on the About page (CDN url + storage key). */
-    images: { url?: string; publicId?: string }[];
+    /** Uploaded images shown on the About page (CDN url + storage key + upload metadata). */
+    images: { url?: string; publicId?: string; name?: string; size?: number; format?: string }[];
   };
   /** Social profile URLs rendered as animated icons in the footer. Empty = hidden. */
   socials: {
@@ -146,6 +165,19 @@ const settingsSchema = new Schema<ISettings>(
       youtubeUrl: { type: String, trim: true },
       imageUrl: { type: String, trim: true },
       imagePublicId: { type: String, trim: true },
+      imageName: { type: String, trim: true },
+      imageSize: { type: Number },
+      imageFormat: { type: String, trim: true },
+    },
+    certificate: {
+      coachName: { type: String, trim: true, default: "Coach David Obuya" },
+      roleLine1: { type: String, trim: true, default: "High Performance Coach Level 3" },
+      roleLine2: { type: String, trim: true, default: "ICC Tutor — Africa" },
+      signatureUrl: { type: String, trim: true },
+      signaturePublicId: { type: String, trim: true },
+      signatureName: { type: String, trim: true },
+      signatureSize: { type: Number },
+      signatureFormat: { type: String, trim: true },
     },
     footer: {
       about: { type: String, trim: true },
@@ -157,7 +189,13 @@ const settingsSchema = new Schema<ISettings>(
       images: {
         type: [
           new Schema(
-            { url: { type: String, trim: true }, publicId: { type: String, trim: true } },
+            {
+              url: { type: String, trim: true },
+              publicId: { type: String, trim: true },
+              name: { type: String, trim: true },
+              size: { type: Number },
+              format: { type: String, trim: true },
+            },
             { _id: false }
           ),
         ],

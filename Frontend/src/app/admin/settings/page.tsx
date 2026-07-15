@@ -11,11 +11,11 @@ import {
   useSettings,
   useUpdateSettings,
   useUploadFoundationImage,
-  useUploadIntroVideo,
   useUploadAboutImage,
   useRemoveAboutImage,
 } from "@/hooks/useSettings";
 import type { Settings } from "@/types/api";
+import { formatBytes, formatLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -78,7 +78,6 @@ const TABS = [
   { key: "footer", label: "Footer & socials" },
   { key: "about", label: "About page" },
   { key: "levels", label: "Levels" },
-  { key: "hero", label: "Home hero" },
   { key: "foundation", label: "Foundation" },
   { key: "watermark", label: "Watermark" },
 ] as const;
@@ -89,7 +88,6 @@ export default function AdminSettingsPage() {
   const { settings, isLoading } = useSettings();
   const update = useUpdateSettings();
   const uploadFoundationImage = useUploadFoundationImage();
-  const uploadIntroVideo = useUploadIntroVideo();
   const uploadAboutImage = useUploadAboutImage();
   const removeAboutImage = useRemoveAboutImage();
   const [form, setForm] = useState<Settings | null>(null);
@@ -115,7 +113,6 @@ export default function AdminSettingsPage() {
   }
 
   const set = (patch: Partial<Settings>) => setForm((f) => ({ ...f!, ...patch }));
-  const setHero = (patch: Partial<Settings["hero"]>) => setForm((f) => ({ ...f!, hero: { ...f!.hero, ...patch } }));
   const setFoundation = (patch: Partial<Settings["foundation"]>) => setForm((f) => ({ ...f!, foundation: { ...f!.foundation, ...patch } }));
   const setFooter = (patch: Partial<Settings["footer"]>) => setForm((f) => ({ ...f!, footer: { ...f!.footer, ...patch } }));
   const setAbout = (patch: Partial<Settings["about"]>) => setForm((f) => ({ ...f!, about: { ...f!.about, ...patch } }));
@@ -232,19 +229,25 @@ export default function AdminSettingsPage() {
             <Field label="Body" hint="leave a blank line between paragraphs">
               <textarea className="input" rows={6} value={form.about?.body ?? ""} onChange={(e) => setAbout({ body: e.target.value })} />
             </Field>
-            <Field label="Images" hint="shown in a gallery on the About page">
+            <Field label="Images" hint="shown in a gallery on the About page · PNG, JPG, WEBP, GIF — no size limit">
               <div className="flex flex-wrap gap-3">
                 {(form.about?.images ?? []).map((img) => (
-                  <div key={img.publicId} className="relative h-24 w-32 overflow-hidden rounded-lg border border-ink-200 bg-ink-50">
-                    {img.url && <Image src={img.url} alt="About" fill className="object-cover" />}
-                    <button
-                      onClick={() => img.publicId && removeAboutImage.mutate(img.publicId)}
-                      disabled={removeAboutImage.isPending}
-                      className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-ball-600"
-                      title="Remove image"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                  <div key={img.publicId} className="w-32">
+                    <div className="relative h-24 w-32 overflow-hidden rounded-lg border border-ink-200 bg-ink-50">
+                      {img.url && <Image src={img.url} alt="About" fill className="object-cover" />}
+                      <button
+                        onClick={() => img.publicId && removeAboutImage.mutate(img.publicId)}
+                        disabled={removeAboutImage.isPending}
+                        className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-ball-600"
+                        title="Remove image"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {/* Uploaded file's format + size. */}
+                    <p className="mt-1 truncate text-[10px] text-ink-400" title={img.name}>
+                      {img.name ? `${img.name} · ` : ""}{formatLabel(img.format, img.name)} · {formatBytes(img.size)}
+                    </p>
                   </div>
                 ))}
                 <label className="grid h-24 w-32 cursor-pointer place-items-center rounded-lg border border-dashed border-ink-300 text-sm font-medium text-ink-500 hover:bg-ink-50">
@@ -313,54 +316,12 @@ export default function AdminSettingsPage() {
           </Section>
         )}
 
-        {show("hero") && (
-          <Section title="Home hero" description="Headline and the intro video shown on the home page.">
-            <Field label="Badge" hint="small pill above the headline">
-              <input className="input" placeholder="🏏 Online Cricket Academy" value={form.hero.badge ?? ""} onChange={(e) => setHero({ badge: e.target.value })} />
-            </Field>
-            <Field label="Title">
-              <input className="input" placeholder="Train at Home with the Best Coaches" value={form.hero.title ?? ""} onChange={(e) => setHero({ title: e.target.value })} />
-            </Field>
-            <Field label="Highlight word" hint="rendered as a coloured chip after the title">
-              <input className="input" value={form.hero.highlight ?? ""} onChange={(e) => setHero({ highlight: e.target.value })} />
-            </Field>
-            <Field label="Subtitle">
-              <textarea className="input" rows={2} value={form.hero.subtitle ?? ""} onChange={(e) => setHero({ subtitle: e.target.value })} />
-            </Field>
-            <Field label="Intro video" hint="uploaded clip shown in 'See the academy in action'">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-ink-200 bg-ink-900/90">
-                  {form.hero.introVideoUrl ? (
-                    <video src={form.hero.introVideoUrl} className="h-full w-full object-cover" muted playsInline />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-white/60">No video</div>
-                  )}
-                </div>
-                <label className="cursor-pointer rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
-                  {uploadIntroVideo.isPending ? "Uploading…" : "Upload video"}
-                  <input
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    disabled={uploadIntroVideo.isPending}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) uploadIntroVideo.mutate(file, { onSuccess: (s) => setHero({ introVideoUrl: s.hero.introVideoUrl }) });
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-              </div>
-            </Field>
-          </Section>
-        )}
-
         {show("foundation") && (
           <Section title="Foundation" description="The 'Contribute to our Foundation' section below the courses on the home page.">
             <Field label="Foundation website URL">
               <input className="input" placeholder="https://foundation.example.com" value={form.foundation.websiteUrl ?? ""} onChange={(e) => setFoundation({ websiteUrl: e.target.value })} />
             </Field>
-            <Field label="Foundation image" hint="shown under the orbit on the home page">
+            <Field label="Foundation image" hint="shown under the orbit on the home page · PNG, JPG, WEBP, GIF — no size limit">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-ink-200 bg-ink-50">
                   {form.foundation.imageUrl ? (
@@ -369,20 +330,28 @@ export default function AdminSettingsPage() {
                     <div className="flex h-full items-center justify-center text-xs text-ink-400">No image</div>
                   )}
                 </div>
-                <label className="cursor-pointer rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
-                  {uploadFoundationImage.isPending ? "Uploading…" : "Upload image"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={uploadFoundationImage.isPending}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) uploadFoundationImage.mutate(file, { onSuccess: (s) => setFoundation({ imageUrl: s.foundation.imageUrl }) });
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
+                <div>
+                  <label className="cursor-pointer rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
+                    {uploadFoundationImage.isPending ? "Uploading…" : "Upload image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadFoundationImage.isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadFoundationImage.mutate(file, { onSuccess: (s) => setFoundation({ imageUrl: s.foundation.imageUrl }) });
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {/* Uploaded file's name, format + size. */}
+                  {settings.foundation?.imageName && (
+                    <p className="mt-1.5 max-w-56 truncate text-[11px] font-medium text-pitch-700" title={settings.foundation.imageName}>
+                      Uploaded: {settings.foundation.imageName} · {formatLabel(settings.foundation.imageFormat, settings.foundation.imageName)} · {formatBytes(settings.foundation.imageSize)}
+                    </p>
+                  )}
+                </div>
               </div>
             </Field>
           </Section>

@@ -8,6 +8,7 @@ import { CourseProgress } from "../models/CourseProgress";
 import { Settings } from "../models/Settings";
 import { UserCategoryProgress, IUserCategoryProgress } from "../models/UserCategoryProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
+import { ensureCertificateSerial } from "./certificates";
 import { ProgressionLog } from "../models/ProgressionLog";
 import { CourseAccessGrant } from "../models/CourseAccessGrant";
 import { PhysicalAssessmentApplication } from "../models/PhysicalAssessmentApplication";
@@ -60,7 +61,7 @@ export async function creditProgress(
   courseId: string | Types.ObjectId
 ): Promise<void> {
   const course = await Course.findById(courseId)
-    .select("category level maxLevel points finalTest courseName certificateColor courseType requiresPhysicalAssessment sections")
+    .select("category level maxLevel points finalTest courseName certificateColor certificateOrientation courseType requiresPhysicalAssessment sections")
     .lean();
   if (!course || !course.category) return; // uncategorised courses are not part of progression
 
@@ -142,12 +143,18 @@ export async function creditProgress(
           courseName: course.courseName,
           categoryName: cat?.name,
           certificateColor: course.certificateColor,
+          certificateOrientation: course.certificateOrientation,
         },
       },
       { upsert: true, new: true }
     );
-    if (cert && !prog.earnedCertificates.some((c) => c.equals(cert._id))) {
-      prog.earnedCertificates.push(cert._id);
+    if (cert) {
+      // Allocate the permanent certificate id (OGR-YEAR-0001) the moment the
+      // certificate is earned; re-downloads always reuse this exact id.
+      await ensureCertificateSerial(cert);
+      if (!prog.earnedCertificates.some((c) => c.equals(cert._id))) {
+        prog.earnedCertificates.push(cert._id);
+      }
     }
   };
 

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, apiError } from "@/lib/axios";
+import { requestWithProgress } from "@/store/uploads";
 import toast from "react-hot-toast";
 import type { Course, CourseCardData } from "@/types/api";
 
@@ -58,6 +59,31 @@ export interface AdminStudent {
   certificates: number;
   totalPoints: number;
   categories: AdminStudentCategory[];
+}
+
+export interface IssuedCertificate {
+  _id: string;
+  /** Permanent serial printed on the certificate, e.g. "OGR-2026-0001". */
+  certificateId: string;
+  userId: string;
+  studentName?: string;
+  studentEmail?: string;
+  course: string;
+  courseName: string;
+  level: string;
+  label?: string;
+  issuedAt: string;
+}
+
+/** Admin: the permanent registry of issued certificate ids. */
+export function useIssuedCertificates(search: string) {
+  return useQuery({
+    queryKey: ["admin-issued-certificates", search],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/certificates", { params: { search: search || undefined } });
+      return data.certificates as IssuedCertificate[];
+    },
+  });
 }
 
 export function useStudents(search: string) {
@@ -194,8 +220,9 @@ export function useCreateCourse() {
   const invalidate = useInvalidate("admin-courses");
   return useMutation({
     mutationFn: async (form: FormData) => {
-      const { data } = await api.post("/courses", form);
-      return data.course as Course;
+      const name = (form.get("courseName") as string) || "New course";
+      const data = await requestWithProgress<{ course: Course }>("post", "/courses", form, `${name} — course`);
+      return data.course;
     },
     onSuccess: () => {
       toast.success("Course created");
@@ -209,8 +236,8 @@ export function useUpdateCourse(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (form: FormData) => {
-      const { data } = await api.put(`/courses/${id}`, form);
-      return data.course as Course;
+      const data = await requestWithProgress<{ course: Course }>("put", `/courses/${id}`, form, "Course update");
+      return data.course;
     },
     onSuccess: () => {
       toast.success("Saved");
@@ -277,7 +304,10 @@ export function useCourseBuilderActions(courseId: string) {
   const deleteModule = useMutation({ mutationFn: (id: string) => api.delete(`/modules/${id}`), onSuccess: () => { toast.success("Module removed"); refresh(); }, onError });
 
   const addTopic = useMutation({
-    mutationFn: (form: FormData) => api.post("/topics", form),
+    mutationFn: (form: FormData) => {
+      const title = (form.get("title") as string) || "Topic";
+      return requestWithProgress("post", "/topics", form, `${title} — topic upload`);
+    },
     onSuccess: () => { toast.success("Topic added"); refresh(); },
     onError,
   });

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Hls from "hls.js";
 import { Download, FileText, LinkIcon, Check } from "lucide-react";
 import type { Topic } from "@/types/api";
+import { formatBytes, formatLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -108,9 +109,18 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
                   rel="noreferrer"
                   className="flex items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-700 hover:bg-ink-50"
                 >
-                  {r.type === "link" ? <LinkIcon className="h-4 w-4 text-pitch-600" /> : <FileText className="h-4 w-4 text-pitch-600" />}
+                  {r.type === "link" ? <LinkIcon className="h-4 w-4 shrink-0 text-pitch-600" /> : <FileText className="h-4 w-4 shrink-0 text-pitch-600" />}
                   <span className="flex-1 truncate">{r.name}</span>
-                  {r.type !== "link" && <Download className="h-4 w-4 text-ink-400" />}
+                  {/* Format + size shown up front, before the student downloads. */}
+                  {r.type !== "link" && (
+                    <>
+                      <span className="shrink-0 rounded-md bg-ink-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-ink-600">
+                        {formatLabel(r.format, r.name)}
+                      </span>
+                      {r.size !== undefined && <span className="shrink-0 text-xs text-ink-400">{formatBytes(r.size)}</span>}
+                      <Download className="h-4 w-4 shrink-0 text-ink-400" />
+                    </>
+                  )}
                 </a>
               </li>
             ))}

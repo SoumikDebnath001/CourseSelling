@@ -14,6 +14,7 @@ import {
 import { courseReviews } from "../controllers/rating";
 import { getFullCourse } from "../controllers/enrollment";
 import { requireAuth, requireAdmin, optionalAuth } from "../middleware/auth";
+import { uploadParser } from "../middleware/uploads";
 
 const router = Router();
 
@@ -25,8 +26,8 @@ router.get("/:courseId/reviews", courseReviews);
 // Admin management
 router.get("/admin/all", requireAuth, requireAdmin, listAdminCourses);
 router.get("/admin/:id", requireAuth, requireAdmin, getAdminCourse);
-router.post("/", requireAuth, requireAdmin, createCourse);
-router.put("/:id", requireAuth, requireAdmin, updateCourse);
+router.post("/", requireAuth, requireAdmin, uploadParser, createCourse);
+router.put("/:id", requireAuth, requireAdmin, uploadParser, updateCourse);
 router.patch("/:id/status", requireAuth, requireAdmin, setCourseStatus);
 router.patch("/:id/points", requireAuth, requireAdmin, applyCoursePoints);
 router.patch("/:id/sections/:levelKey", requireAuth, requireAdmin, updateSection);
