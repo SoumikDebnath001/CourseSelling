@@ -10,14 +10,23 @@ function signSettingsAssets(s: {
   hero?: { introVideoUrl?: string; introVideoPublicId?: string };
   foundation?: { imageUrl?: string; imagePublicId?: string };
   about?: { images?: { url?: string; publicId?: string }[] };
-  certificate?: { signatureUrl?: string; signaturePublicId?: string };
+  certificate?: {
+    signatureUrl?: string;
+    signaturePublicId?: string;
+    signatories?: { signatureUrl?: string; signaturePublicId?: string }[];
+  };
 }): void {
   if (s.hero) s.hero.introVideoUrl = signedAssetUrl(s.hero.introVideoPublicId, s.hero.introVideoUrl);
   if (s.foundation) s.foundation.imageUrl = signedAssetUrl(s.foundation.imagePublicId, s.foundation.imageUrl);
   if (s.about?.images) {
     for (const img of s.about.images) img.url = signedAssetUrl(img.publicId, img.url);
   }
-  if (s.certificate) s.certificate.signatureUrl = signedAssetUrl(s.certificate.signaturePublicId, s.certificate.signatureUrl);
+  if (s.certificate) {
+    s.certificate.signatureUrl = signedAssetUrl(s.certificate.signaturePublicId, s.certificate.signatureUrl);
+    for (const sig of s.certificate.signatories ?? []) {
+      sig.signatureUrl = signedAssetUrl(sig.signaturePublicId, sig.signatureUrl);
+    }
+  }
 }
 
 /** Accepts a URL or an empty string (so admins can clear a field). */
@@ -30,13 +39,8 @@ export const settingsSchema = z.object({
   place: z.string().trim().optional(),
   // NOTE: the home hero is intentionally NOT updatable any more — the "hero" block is
   // absent from this schema, so any hero payload is stripped before it reaches the model.
-  certificate: z
-    .object({
-      coachName: z.string().trim().max(80).optional(),
-      roleLine1: z.string().trim().max(120).optional(),
-      roleLine2: z.string().trim().max(120).optional(),
-    })
-    .optional(),
+  // Certificate signatories are managed via the dedicated /settings/signatories routes,
+  // so the "certificate" block is absent here too.
   foundation: z
     .object({
       websiteUrl: urlOrEmpty.optional(),
@@ -74,6 +78,11 @@ export const settingsSchema = z.object({
       youtube: z.coerce.number().int().optional(),
       twitter: z.coerce.number().int().optional(),
       linkedin: z.coerce.number().int().optional(),
+    })
+    .optional(),
+  terms: z
+    .object({
+      content: z.string().trim().min(1, "Terms & Conditions cannot be empty").optional(),
     })
     .optional(),
   footerLinks: z
@@ -133,12 +142,6 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
     settings.markModified("levels");
   }
 
-  if (body.certificate) {
-    for (const k of ["coachName", "roleLine1", "roleLine2"] as const) {
-      if (body.certificate[k] !== undefined) settings.certificate[k] = body.certificate[k];
-    }
-    settings.markModified("certificate");
-  }
   if (body.foundation) {
     for (const k of ["websiteUrl", "youtubeUrl", "imageUrl"] as const) {
       if (body.foundation[k] !== undefined) settings.foundation[k] = body.foundation[k];
@@ -167,6 +170,10 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
     }
     settings.markModified("socialOrder");
   }
+  if (body.terms) {
+    if (body.terms.content !== undefined) settings.terms.content = body.terms.content;
+    settings.markModified("terms");
+  }
   if (body.footerLinks !== undefined) {
     settings.footerLinks = body.footerLinks;
     settings.markModified("footerLinks");
@@ -183,30 +190,90 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   res.json({ success: true, settings: out });
 });
 
-/**
- * Admin: upload (and replace) the certificate signature — a background-less
- * (transparent) PNG printed on every completion certificate. PNG only, max 10MB.
+/* ── certificate signatories ──
+ * The pool of people whose signature can be printed on certificates. Each course
+ * selects up to three of them. Fields arrive as multipart form data alongside an
+ * optional background-less (transparent) PNG `signature` file, max 10MB.
  */
-export const uploadCertificateSignature = asyncHandler(async (req: Request, res: Response) => {
-  const file = req.files?.signature as UploadedFile | undefined;
-  if (!file) throw new ApiError(400, "No signature file provided");
+
+const signatorySchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(80),
+  roleLine1: z.string().trim().max(120).optional(),
+  roleLine2: z.string().trim().max(120).optional(),
+});
+
+/** Applies an uploaded signature file to a signatory entry (replacing any old file). */
+async function applySignatureFile(
+  sig: ISettings["certificate"]["signatories"][number],
+  file: UploadedFile
+): Promise<void> {
   assertAllowedFile(file, "signature", { maxBytes: 10 * 1024 * 1024 });
-
-  const settings = await Settings.getSingleton();
-  await deleteFile(settings.certificate?.signaturePublicId);
-
+  await deleteFile(sig.signaturePublicId);
   const up = await uploadFile(file, "certificate");
-  settings.certificate.signatureUrl = up.url;
-  settings.certificate.signaturePublicId = up.key;
-  settings.certificate.signatureName = file.name;
-  settings.certificate.signatureSize = up.size;
-  settings.certificate.signatureFormat = up.format;
-  settings.markModified("certificate");
-  await settings.save();
+  sig.signatureUrl = up.url;
+  sig.signaturePublicId = up.key;
+  sig.signatureName = file.name;
+  sig.signatureSize = up.size;
+  sig.signatureFormat = up.format;
+}
 
+function respondWithSettings(res: Response, settings: ISettings): void {
   const out = settings.toObject();
   signSettingsAssets(out);
   res.json({ success: true, settings: out });
+}
+
+/** Admin: add a certificate signatory (name/roles + optional transparent-PNG signature). */
+export const addSignatory = asyncHandler(async (req: Request, res: Response) => {
+  const body = signatorySchema.parse(req.body);
+  const settings = await Settings.getSingleton();
+
+  settings.certificate.signatories.push({ name: body.name, roleLine1: body.roleLine1, roleLine2: body.roleLine2 });
+  const sig = settings.certificate.signatories[settings.certificate.signatories.length - 1];
+
+  const file = req.files?.signature as UploadedFile | undefined;
+  if (file) await applySignatureFile(sig, file);
+
+  settings.markModified("certificate");
+  await settings.save();
+  respondWithSettings(res, settings);
+});
+
+/** Admin: update a signatory's details and/or replace their signature image. */
+export const updateSignatory = asyncHandler(async (req: Request, res: Response) => {
+  const body = signatorySchema.partial().parse(req.body);
+  const settings = await Settings.getSingleton();
+  const sig = settings.certificate.signatories.find((s) => String(s._id) === req.params.id);
+  if (!sig) throw new ApiError(404, "Signatory not found");
+
+  if (body.name !== undefined) sig.name = body.name;
+  if (body.roleLine1 !== undefined) sig.roleLine1 = body.roleLine1;
+  if (body.roleLine2 !== undefined) sig.roleLine2 = body.roleLine2;
+
+  const file = req.files?.signature as UploadedFile | undefined;
+  if (file) await applySignatureFile(sig, file);
+
+  settings.markModified("certificate");
+  await settings.save();
+  respondWithSettings(res, settings);
+});
+
+/** Admin: remove a signatory (and their uploaded signature file). At least one must remain. */
+export const deleteSignatory = asyncHandler(async (req: Request, res: Response) => {
+  const settings = await Settings.getSingleton();
+  const sig = settings.certificate.signatories.find((s) => String(s._id) === req.params.id);
+  if (!sig) throw new ApiError(404, "Signatory not found");
+  if (settings.certificate.signatories.length <= 1) {
+    throw new ApiError(400, "At least one signatory is required — add another before deleting this one.");
+  }
+
+  await deleteFile(sig.signaturePublicId);
+  settings.certificate.signatories = settings.certificate.signatories.filter(
+    (s) => String(s._id) !== req.params.id
+  );
+  settings.markModified("certificate");
+  await settings.save();
+  respondWithSettings(res, settings);
 });
 
 /** Admin: upload (and replace) the foundation image shown on the home page. */

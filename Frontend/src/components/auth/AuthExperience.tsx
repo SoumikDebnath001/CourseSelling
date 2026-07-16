@@ -7,8 +7,11 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Mail, Lock, User, KeyRound, ArrowLeft, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuthActions } from "@/hooks/useAuthActions";
+import { useSettings } from "@/hooks/useSettings";
 import { apiError } from "@/lib/axios";
 import { Button } from "@/components/ui/Button";
+import { TermsModal } from "@/components/auth/TermsModal";
+import { DEFAULT_TERMS } from "@/lib/terms";
 import { cn } from "@/lib/utils";
 
 type Tab = "login" | "register";
@@ -18,6 +21,7 @@ type Step = "form" | "verify";
 export function AuthExperience() {
   const router = useRouter();
   const actions = useAuthActions();
+  const { settings } = useSettings();
   const [tab, setTab] = useState<Tab>("login");
   const [method, setMethod] = useState<LoginMethod>("password");
   const [step, setStep] = useState<Step>("form");
@@ -29,6 +33,11 @@ export function AuthExperience() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [sentNote, setSentNote] = useState("");
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  // True when the terms pop-up was opened by submitting the form — agreeing then
+  // continues registration right away instead of making the user click again.
+  const [pendingRegister, setPendingRegister] = useState(false);
 
   const goHome = () => {
     toast.success("Welcome to the academy!");
@@ -41,11 +50,7 @@ export function AuthExperience() {
     e.preventDefault();
     actions.login.mutate({ email, password }, { onSuccess: goHome, onError: fail });
   };
-  const submitRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password.length < 6) return toast.error("Password must be at least 6 characters");
-    if (password.length > 30) return toast.error("Password must be at most 30 characters");
-    if (password !== confirmPassword) return toast.error("Passwords do not match");
+  const doRegister = () => {
     actions.register.mutate(
       { name, email, password },
       {
@@ -58,6 +63,18 @@ export function AuthExperience() {
         onError: fail,
       }
     );
+  };
+  const submitRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (password.length > 30) return toast.error("Password must be at most 30 characters");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
+    if (!agreedTerms) {
+      setPendingRegister(true);
+      setShowTerms(true);
+      return;
+    }
+    doRegister();
   };
   const submitRegisterVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +105,9 @@ export function AuthExperience() {
     setStep("form");
     setOtp("");
     setSentNote("");
+    setAgreedTerms(false);
+    setShowTerms(false);
+    setPendingRegister(false);
   };
 
   return (
@@ -228,6 +248,35 @@ export function AuthExperience() {
                   {confirmPassword.length > 0 && password !== confirmPassword && (
                     <p className="-mt-2 text-xs text-ball-600">Passwords don&apos;t match</p>
                   )}
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={agreedTerms}
+                      onChange={(e) => {
+                        // Ticking always goes through the pop-up so the terms are actually shown.
+                        if (e.target.checked) {
+                          setPendingRegister(false);
+                          setShowTerms(true);
+                        } else {
+                          setAgreedTerms(false);
+                        }
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-600"
+                    />
+                    <span className="text-sm text-ink-600">
+                      I agree to the{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPendingRegister(false);
+                          setShowTerms(true);
+                        }}
+                        className="font-semibold text-brand-600 underline underline-offset-2 hover:text-brand-700"
+                      >
+                        Terms &amp; Conditions
+                      </button>
+                    </span>
+                  </label>
                   <BrandButton loading={actions.register.isPending}>Create account</BrandButton>
                 </form>
               ) : (
@@ -246,6 +295,24 @@ export function AuthExperience() {
           )}
         </div>
       </div>
+
+      {showTerms && (
+        <TermsModal
+          content={settings.terms?.content || DEFAULT_TERMS}
+          onAgree={() => {
+            setAgreedTerms(true);
+            setShowTerms(false);
+            if (pendingRegister) {
+              setPendingRegister(false);
+              doRegister();
+            }
+          }}
+          onClose={() => {
+            setShowTerms(false);
+            setPendingRegister(false);
+          }}
+        />
+      )}
     </div>
   );
 }

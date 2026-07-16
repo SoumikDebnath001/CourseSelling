@@ -9,12 +9,48 @@ function otpBlock(otp: string): string {
     <p style="font-size:13px;color:#64748b;">This code expires in 10 minutes. If you didn't request it, you can ignore this email.</p>`;
 }
 
-export function otpVerifyEmail(name: string, otp: string) {
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Renders the admin-editable Terms & Conditions text as email HTML.
+ * Convention (same as the registration pop-up): "## " → heading, "- " → bullet,
+ * blank line → paragraph break.
+ */
+function termsBlock(terms: string): string {
+  const out: string[] = [];
+  let bullets: string[] = [];
+  const flush = () => {
+    if (!bullets.length) return;
+    out.push(`<ul style="margin:6px 0 10px;padding-left:20px;">${bullets.map((b) => `<li style="margin:2px 0;">${b}</li>`).join("")}</ul>`);
+    bullets = [];
+  };
+  for (const raw of terms.split("\n")) {
+    const line = escapeHtml(raw.trim());
+    if (line.startsWith("- ")) {
+      bullets.push(line.slice(2));
+      continue;
+    }
+    flush();
+    if (!line) continue;
+    if (line.startsWith("## ")) out.push(`<h3 style="margin:14px 0 4px;font-size:13px;color:#0f172a;">${line.slice(3)}</h3>`);
+    else out.push(`<p style="margin:6px 0;">${line}</p>`);
+  }
+  flush();
+  return `<div style="margin-top:22px;border-top:1px solid #e2e8f0;padding-top:16px;">
+      <h2 style="margin:0 0 8px;font-size:15px;color:#0f172a;">Terms &amp; Conditions — Consent and Participation Agreement</h2>
+      <p style="margin:0 0 10px;font-size:12px;color:#64748b;">You accepted these terms when creating your account. Keep this email for your records.</p>
+      <div style="font-size:12px;line-height:1.6;color:#475569;">${out.join("")}</div>
+    </div>`;
+}
+
+export function otpVerifyEmail(name: string, otp: string, terms?: string) {
   return {
     subject: "Verify your email — Cricket Academy",
     html: baseLayout({
       title: "Confirm your email ✉️",
-      body: `<p>Hi ${name},</p><p>Welcome! Use this code to verify your email and activate your account:</p>${otpBlock(otp)}`,
+      body: `<p>Hi ${name},</p><p>Welcome! Use this code to verify your email and activate your account:</p>${otpBlock(otp)}${terms ? termsBlock(terms) : ""}`,
     }),
   };
 }

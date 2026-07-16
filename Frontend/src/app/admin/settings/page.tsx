@@ -79,6 +79,7 @@ const TABS = [
   { key: "about", label: "About page" },
   { key: "levels", label: "Levels" },
   { key: "foundation", label: "Foundation" },
+  { key: "terms", label: "Terms & conditions" },
   { key: "watermark", label: "Watermark" },
 ] as const;
 
@@ -119,6 +120,7 @@ export default function AdminSettingsPage() {
   const setSocials = (patch: Partial<Settings["socials"]>) => setForm((f) => ({ ...f!, socials: { ...f!.socials, ...patch } }));
   const setSocialOrder = (patch: Partial<Settings["socialOrder"]>) => setForm((f) => ({ ...f!, socialOrder: { ...f!.socialOrder, ...patch } }));
   const setWatermark = (patch: Partial<Settings["watermark"]>) => setForm((f) => ({ ...f!, watermark: { ...f!.watermark, ...patch } }));
+  const setTerms = (patch: Partial<Settings["terms"]>) => setForm((f) => ({ ...f!, terms: { ...f!.terms, ...patch } }));
   const setLevels = (levels: LevelDef[]) => setForm((f) => ({ ...f!, levels }));
   const updateLevel = (i: number, patch: Partial<LevelDef>) =>
     setLevels(form.levels.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -353,6 +355,22 @@ export default function AdminSettingsPage() {
                   )}
                 </div>
               </div>
+            </Field>
+          </Section>
+        )}
+
+        {show("terms") && (
+          <Section
+            title="Terms & Conditions"
+            description="The Consent and Participation Agreement shown in the pop-up every user must accept when registering (and included in the registration email). Formatting: start a line with '## ' for a section heading, '- ' for a bullet point; leave a blank line between paragraphs."
+          >
+            <Field label="Terms text">
+              <textarea
+                className="input min-h-96 font-mono text-xs leading-relaxed"
+                rows={24}
+                value={form.terms?.content ?? ""}
+                onChange={(e) => setTerms({ content: e.target.value })}
+              />
             </Field>
           </Section>
         )}

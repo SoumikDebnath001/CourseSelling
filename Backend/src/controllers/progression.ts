@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { UserCategoryProgress } from "../models/UserCategoryProgress";
 import { CertificateRecord } from "../models/CertificateRecord";
 import { Category } from "../models/Category";
+import { Course } from "../models/Course";
 import { getLevels } from "../utils/progression";
 import { ensureCertificateSerial } from "../utils/certificates";
 import { sortLevels, levelLabel } from "../config/levels";
@@ -69,7 +70,15 @@ export const myCertificates = asyncHandler(async (req: Request, res: Response) =
   for (const c of certs) {
     if (!c.serial) c.serial = await ensureCertificateSerial(c);
   }
-  res.json({ success: true, certificates: certs });
+  // Attach each course's CURRENT signatory selection so re-downloads always carry the
+  // signature blocks the admin has configured for that course.
+  const courseIds = [...new Set(certs.map((c) => String(c.course)))];
+  const courses = await Course.find({ _id: { $in: courseIds } })
+    .select("certificateSignatories")
+    .lean();
+  const signatoriesByCourse = new Map(courses.map((c) => [String(c._id), c.certificateSignatories ?? []]));
+  const out = certs.map((c) => ({ ...c, certificateSignatories: signatoriesByCourse.get(String(c.course)) ?? [] }));
+  res.json({ success: true, certificates: out });
 });
 
 /** Public: the catalogue's categories (active) — handy for filters. */

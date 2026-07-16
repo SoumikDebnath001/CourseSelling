@@ -13,7 +13,7 @@ import { useMyProgression, useMyCertificates } from "@/hooks/useProgression";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth, type AuthAccount } from "@/store/auth";
 import { Spinner } from "@/components/ui/Spinner";
-import { generateCertificate } from "@/lib/certificate";
+import { generateCertificate, resolveSignatories } from "@/lib/certificate";
 import { formatKES } from "@/lib/currency";
 import { formatKenyaDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -672,7 +672,7 @@ function CertificationsPanel() {
                   date: new Date(c.issuedAt),
                   orientation: c.certificateOrientation ?? "portrait",
                   serial: c.serial,
-                  branding: settings.certificate,
+                  signatories: resolveSignatories(c.certificateSignatories, settings.certificate),
                 })
               }
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-50"

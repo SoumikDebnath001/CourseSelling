@@ -40,6 +40,12 @@ export interface ICourse extends Document {
   /** Certificate layout students download: vertical (portrait) or horizontal (landscape). */
   certificateOrientation: "portrait" | "landscape";
   /**
+   * Ids of the signatories (Settings.certificate.signatories subdocs, max 3) whose
+   * signature blocks are printed on this course's certificate. Empty = the first
+   * signatory in the pool (the default).
+   */
+  certificateSignatories: Types.ObjectId[];
+  /**
    * "progressive" = part of a structured Foundation→Level1→Level2 path within a category.
    * "miscellaneous" = standalone course unlocked by reaching a level in its category.
    */
@@ -79,6 +85,7 @@ const courseSchema = new Schema<ICourse>(
     instructions: { type: [String], default: [] },
     certificateColor: { type: String, default: "#4f46e5" },
     certificateOrientation: { type: String, enum: ["portrait", "landscape"], default: "portrait" },
+    certificateSignatories: { type: [Schema.Types.ObjectId], default: [] },
     courseType: { type: String, enum: ["progressive", "miscellaneous"], default: "progressive" },
     level: { type: String, default: "foundation" },
     maxLevel: { type: String },

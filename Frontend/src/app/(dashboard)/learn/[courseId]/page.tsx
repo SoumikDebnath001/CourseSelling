@@ -14,7 +14,7 @@ import { VideoPlayer } from "@/components/player/VideoPlayer";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { TestRunner } from "@/components/test/TestRunner";
 import { FullScreenSpinner } from "@/components/ui/Spinner";
-import { generateCertificate } from "@/lib/certificate";
+import { generateCertificate, resolveSignatories } from "@/lib/certificate";
 import { cn } from "@/lib/utils";
 import type { Topic } from "@/types/api";
 
@@ -74,7 +74,7 @@ function LearnInner({ courseId }: { courseId: string }) {
       orientation: course.certificateOrientation ?? "portrait",
       serial: certificateSerials?.[key],
       date: issuedAt ? new Date(issuedAt) : undefined,
-      branding: settings.certificate,
+      signatories: resolveSignatories(course.certificateSignatories, settings.certificate),
     });
   };
 

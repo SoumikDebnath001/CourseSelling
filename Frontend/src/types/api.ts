@@ -40,7 +40,11 @@ export interface Settings {
     imageSize?: number;
     imageFormat?: string;
   };
-  /** Certificate branding — the signatory block + uploaded transparent PNG signature. */
+  /**
+   * Certificate branding. `signatories` is the pool of people whose signature can be
+   * printed on certificates; each course selects up to three of them. The flat
+   * coachName/roleLine/signature fields are the legacy single signatory (fallback only).
+   */
   certificate: {
     coachName?: string;
     roleLine1?: string;
@@ -50,6 +54,7 @@ export interface Settings {
     signatureName?: string;
     signatureSize?: number;
     signatureFormat?: string;
+    signatories: CertificateSignatory[];
   };
   footer: {
     about?: string;
@@ -76,12 +81,28 @@ export interface Settings {
     twitter?: number;
     linkedin?: number;
   };
+  /** Terms & Conditions accepted in the registration pop-up; editable by the admin. */
+  terms: {
+    content?: string;
+  };
   footerLinks: FooterLinkGroup[];
   watermark: {
     enabled: boolean;
     opacity: number;
   };
   levels: LevelDef[];
+}
+
+/** One person whose signature can be printed on completion certificates. */
+export interface CertificateSignatory {
+  _id: string;
+  name: string;
+  roleLine1?: string;
+  roleLine2?: string;
+  signatureUrl?: string;
+  signatureName?: string;
+  signatureSize?: number;
+  signatureFormat?: string;
 }
 
 /** A footer link column (e.g. Sitemap, Resources) edited from the admin panel. */
@@ -176,6 +197,8 @@ export interface Course {
   certificateColor?: string;
   /** Certificate layout students download: vertical (portrait) or horizontal (landscape). */
   certificateOrientation?: "portrait" | "landscape";
+  /** Ids of the signatories (Settings.certificate.signatories) printed on this course's certificate. */
+  certificateSignatories?: string[];
   courseType: CourseType;
   level: string;
   maxLevel?: string;
@@ -245,6 +268,8 @@ export interface Certificate {
   categoryName?: string;
   certificateColor: string;
   certificateOrientation?: "portrait" | "landscape";
+  /** The course's current signatory selection (ids into Settings.certificate.signatories). */
+  certificateSignatories?: string[];
   /** Permanent certificate id (OGR-YEAR-0001) — identical on every re-download. */
   serial?: string;
   issuedAt: string;

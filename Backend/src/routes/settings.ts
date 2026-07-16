@@ -3,7 +3,9 @@ import {
   getSettings,
   updateSettings,
   uploadFoundationImage,
-  uploadCertificateSignature,
+  addSignatory,
+  updateSignatory,
+  deleteSignatory,
   uploadAboutImage,
   removeAboutImage,
   settingsSchema,
@@ -19,7 +21,10 @@ router.put("/", requireAuth, requireAdmin, validateBody(settingsSchema), updateS
 router.post("/foundation-image", requireAuth, requireAdmin, uploadParser, uploadFoundationImage);
 // NOTE: the old POST /intro-video endpoint was removed on purpose — the home hero is no
 // longer editable from the admin panel (or the API).
-router.post("/certificate-signature", requireAuth, requireAdmin, uploadParser, uploadCertificateSignature);
+// Certificate signatories pool — each course picks which of them sign its certificate.
+router.post("/signatories", requireAuth, requireAdmin, uploadParser, addSignatory);
+router.put("/signatories/:id", requireAuth, requireAdmin, uploadParser, updateSignatory);
+router.delete("/signatories/:id", requireAuth, requireAdmin, deleteSignatory);
 router.post("/about-image", requireAuth, requireAdmin, uploadParser, uploadAboutImage);
 router.delete("/about-image", requireAuth, requireAdmin, removeAboutImage);
 

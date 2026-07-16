@@ -5,13 +5,44 @@ function escapeHtml(s: string): string {
 
 export type CertificateOrientation = "portrait" | "landscape";
 
-/** Signatory block printed at the bottom of the certificate (admin-editable). */
-export interface CertificateBranding {
-  coachName?: string;
+/** One signatory block printed at the bottom of the certificate (admin-editable). */
+export interface CertificateSignatoryView {
+  name?: string;
   roleLine1?: string;
   roleLine2?: string;
   /** Uploaded transparent PNG signature; falls back to the bundled artwork. */
   signatureUrl?: string;
+}
+
+/**
+ * Resolves a course's selected signatory ids against the settings pool. Falls back to
+ * the first signatory in the pool, then to the legacy single-signatory settings fields,
+ * so a certificate always carries at least one signature block.
+ */
+export function resolveSignatories(
+  ids: string[] | undefined,
+  certificate?: {
+    coachName?: string;
+    roleLine1?: string;
+    roleLine2?: string;
+    signatureUrl?: string;
+    signatories?: Array<CertificateSignatoryView & { _id: string }>;
+  }
+): CertificateSignatoryView[] {
+  const pool = certificate?.signatories ?? [];
+  const picked = (ids ?? [])
+    .map((id) => pool.find((s) => s._id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s);
+  if (picked.length) return picked;
+  if (pool.length) return [pool[0]];
+  return [
+    {
+      name: certificate?.coachName,
+      roleLine1: certificate?.roleLine1,
+      roleLine2: certificate?.roleLine2,
+      signatureUrl: certificate?.signatureUrl,
+    },
+  ];
 }
 
 interface CertificateInput {
@@ -28,8 +59,8 @@ interface CertificateInput {
    * Omitted only for admin previews, which print a sample id.
    */
   serial?: string;
-  /** Coach name / role lines / signature from admin settings. */
-  branding?: CertificateBranding;
+  /** Signature blocks (course's selected signatories, max 3) from admin settings. */
+  signatories?: CertificateSignatoryView[];
 }
 
 /** Certificate dates always render in Kenya (Africa/Nairobi) time. */
@@ -51,7 +82,7 @@ export async function generateCertificate({
   date = new Date(),
   orientation = "portrait",
   serial,
-  branding,
+  signatories,
 }: CertificateInput) {
   const accent = /^#[0-9a-fA-F]{6}$/.test(color ?? "") ? color! : "#23281c";
   const landscape = orientation === "landscape";
@@ -65,10 +96,25 @@ export async function generateCertificate({
   const certId = serial || `OGR-${date.getFullYear()}-0000`;
   const asset = (name: string) => `${window.location.origin}/certificate/${name}`;
 
-  const coachName = branding?.coachName?.trim() || "Coach David Obuya";
-  const roleLine1 = branding?.roleLine1?.trim() || "High Performance Coach Level 3";
-  const roleLine2 = branding?.roleLine2?.trim() || "ICC Tutor — Africa";
-  const signatureSrc = branding?.signatureUrl || asset("signature.png");
+  // One signature block per selected signatory (max 3 fit next to the QR code).
+  // With more blocks each one narrows so the row still fits both page widths.
+  const blocks = (signatories?.length ? signatories : [{}]).slice(0, 3).map((s) => ({
+    name: s.name?.trim() || "Coach David Obuya",
+    roleLine1: s.roleLine1?.trim() || "High Performance Coach Level 3",
+    roleLine2: s.roleLine2?.trim() || "ICC Tutor — Africa",
+    signatureUrl: s.signatureUrl || asset("signature.png"),
+  }));
+  const blockMinWidth = blocks.length >= 3 ? 110 : blocks.length === 2 ? 150 : 230;
+  const footGap = blocks.length >= 3 ? 10 : 24;
+  const sigBlocksHtml = blocks
+    .map(
+      (b) => `<div class="block">
+          <img class="sig" src="${escapeHtml(b.signatureUrl)}" alt="" />
+          <div class="line">${escapeHtml(b.name)}</div>
+          <div class="role">${escapeHtml(b.roleLine1)}<br/>${escapeHtml(b.roleLine2)}</div>
+        </div>`
+    )
+    .join("\n        ");
 
   // QR code → the public verification page for this certificate id. Only real
   // certificates (with a server-issued serial) get one; previews show a placeholder.
@@ -173,8 +219,8 @@ export async function generateCertificate({
   .meta { letter-spacing: 1px; color: #6b7060; }
   .meta b { color: #23281c; letter-spacing: 1.5px; }
   .meta .issued { margin-top: 6px; }
-  .foot { margin-top: auto; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-left: 8px; padding-right: 8px; }
-  .block { text-align: center; min-width: 230px; }
+  .foot { margin-top: auto; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; gap: ${footGap}px; padding-left: 8px; padding-right: 8px; }
+  .block { text-align: center; min-width: ${blockMinWidth}px; }
   .block .sig { margin-bottom: -8px; }
   .block .line { border-top: 1.5px solid #23281c; margin-top: 6px; font-weight: 700; letter-spacing: 1px; color: #23281c; text-transform: uppercase; }
   .block .role { margin-top: 3px; font-weight: 500; letter-spacing: 1px; color: #6b7060; line-height: 1.6; }
@@ -217,11 +263,7 @@ export async function generateCertificate({
 
       <div class="foot">
         ${qrBlock}
-        <div class="block">
-          <img class="sig" src="${escapeHtml(signatureSrc)}" alt="" />
-          <div class="line">${escapeHtml(coachName)}</div>
-          <div class="role">${escapeHtml(roleLine1)}<br/>${escapeHtml(roleLine2)}</div>
-        </div>
+        ${sigBlocksHtml}
       </div>
     </div>
 

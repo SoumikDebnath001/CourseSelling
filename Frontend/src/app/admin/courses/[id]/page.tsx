@@ -15,7 +15,7 @@ import {
 } from "@/hooks/useAdmin";
 import { useSettings } from "@/hooks/useSettings";
 import { LevelSlider } from "@/components/course/LevelSlider";
-import { generateCertificate } from "@/lib/certificate";
+import { generateCertificate, resolveSignatories } from "@/lib/certificate";
 import { useUploads } from "@/store/uploads";
 import { formatBytes, formatLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -572,20 +572,36 @@ function CertificateCard({ course }: { course: Course }) {
   const { settings } = useSettings();
   const [color, setColor] = useState(course.certificateColor ?? "#4f46e5");
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(course.certificateOrientation ?? "portrait");
+  const [signatoryIds, setSignatoryIds] = useState<string[]>(course.certificateSignatories ?? []);
+  const pool = settings.certificate?.signatories ?? [];
 
+  const toggleSignatory = (id: string) =>
+    setSignatoryIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : ids.length >= 3 ? ids : [...ids, id]
+    );
+
+  const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id) => b.includes(id));
   const dirty =
     color !== (course.certificateColor ?? "#4f46e5") ||
-    orientation !== (course.certificateOrientation ?? "portrait");
+    orientation !== (course.certificateOrientation ?? "portrait") ||
+    !sameIds(signatoryIds, course.certificateSignatories ?? []);
 
   const save = () => {
     const fd = new FormData();
     fd.append("certificateColor", color);
     fd.append("certificateOrientation", orientation);
+    fd.append("certificateSignatories", JSON.stringify(signatoryIds));
     update.mutate(fd);
   };
 
   const preview = (o: "portrait" | "landscape") =>
-    generateCertificate({ studentName: "Student Name", courseName: course.courseName, color, orientation: o, branding: settings.certificate });
+    generateCertificate({
+      studentName: "Student Name",
+      courseName: course.courseName,
+      color,
+      orientation: o,
+      signatories: resolveSignatories(signatoryIds, settings.certificate),
+    });
 
   return (
     <div className="card mt-6 p-4">
@@ -633,6 +649,45 @@ function CertificateCard({ course }: { course: Course }) {
         <Button onClick={save} loading={update.isPending} disabled={!dirty}>
           Save
         </Button>
+      </div>
+
+      {/* Which of the stored signatories sign this course's certificate (max 3). */}
+      <div className="mt-5">
+        <p className="text-sm font-semibold text-ink-800">Signatures on this certificate</p>
+        <p className="text-xs text-ink-400">
+          Pick up to three signatories (managed in{" "}
+          <a href="/admin/certificates" className="font-semibold text-brand-600 hover:underline">Certificates</a>).
+          With none selected, the first signatory signs.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {pool.map((s) => {
+            const checked = signatoryIds.includes(s._id);
+            return (
+              <label
+                key={s._id}
+                className={
+                  "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition " +
+                  (checked ? "border-grape-400 bg-grape-50 text-grape-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleSignatory(s._id)}
+                  className="h-4 w-4 rounded border-ink-300"
+                />
+                <span>
+                  {s.name}
+                  {s.roleLine1 && <span className="ml-1 text-xs font-normal text-ink-400">— {s.roleLine1}</span>}
+                </span>
+              </label>
+            );
+          })}
+          {pool.length === 0 && <p className="text-xs text-ink-400">No signatories stored yet — add them on the Certificates page.</p>}
+        </div>
+        {signatoryIds.length >= 3 && (
+          <p className="mt-1.5 text-[11px] text-ink-400">Maximum of 3 signatures per certificate.</p>
+        )}
       </div>
     </div>
   );

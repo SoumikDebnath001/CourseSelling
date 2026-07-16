@@ -10,6 +10,8 @@ import { generateOtp, hashOtp, otpExpiry, isOtpValid } from "../utils/otp";
 import { mailSender } from "../mail/mailSender";
 import { isMailConfigured } from "../config/env";
 import { otpVerifyEmail, otpLoginEmail } from "../mail/templates";
+import { Settings } from "../models/Settings";
+import { DEFAULT_TERMS } from "../config/terms";
 import type { AuthPayload } from "../types/auth";
 
 /* ───────────────────────── schemas ───────────────────────── */
@@ -117,8 +119,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     await OnlinePlatformUser.create({ name, email: lc, password: hashed, isVerified: false, ...otpFields });
   }
 
+  // Include the current Terms & Conditions (accepted in the sign-up pop-up) in the
+  // verification email so the user keeps a copy of what they agreed to.
+  const terms = (await Settings.getSingleton()).terms?.content || DEFAULT_TERMS;
+
   // Await the send and only confirm success if the email actually went out.
-  const mail = otpVerifyEmail(name, otp);
+  const mail = otpVerifyEmail(name, otp, terms);
   const sent = await mailSender(lc, mail.subject, mail.html);
   if (!sent) {
     throw new ApiError(502, "We couldn't send the verification email. Please check the address and try again.");

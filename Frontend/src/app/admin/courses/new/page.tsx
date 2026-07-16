@@ -21,6 +21,13 @@ export default function NewCoursePage() {
   const [courseType, setCourseType] = useState<"progressive" | "miscellaneous">("progressive");
   const [level, setLevel] = useState(entryKey);
   const [maxLevel, setMaxLevel] = useState(entryKey);
+  const [signatoryIds, setSignatoryIds] = useState<string[]>([]);
+  const signatoryPool = settings.certificate?.signatories ?? [];
+
+  const toggleSignatory = (id: string) =>
+    setSignatoryIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : ids.length >= 3 ? ids : [...ids, id]
+    );
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,6 +35,7 @@ export default function NewCoursePage() {
     fd.set("level", level);
     // Standalone courses sit at ONE level — no level range is sent.
     if (courseType === "progressive") fd.set("maxLevel", maxLevel);
+    fd.set("certificateSignatories", JSON.stringify(signatoryIds));
     if (thumb) fd.append("thumbnail", thumb);
     create.mutate(fd, { onSuccess: (course) => router.push(`/admin/courses/${course._id}`) });
   };
@@ -143,6 +151,46 @@ export default function NewCoursePage() {
                 </Field>
               </div>
               
+              <Field label="Certificate signatures (up to 3)">
+                <div className="rounded-lg border border-ink-200 bg-ink-50/50 p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {signatoryPool.map((s) => {
+                      const checked = signatoryIds.includes(s._id);
+                      return (
+                        <label
+                          key={s._id}
+                          className={
+                            "flex cursor-pointer items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition " +
+                            (checked ? "border-grape-400 bg-grape-50 text-grape-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
+                          }
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleSignatory(s._id)}
+                            className="h-4 w-4 rounded border-ink-300"
+                          />
+                          <span>
+                            {s.name}
+                            {s.roleLine1 && <span className="ml-1 text-xs font-normal text-ink-400">— {s.roleLine1}</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {signatoryPool.length === 0 && (
+                      <p className="text-xs text-ink-400">
+                        No signatories stored yet — add them on the{" "}
+                        <a href="/admin/certificates" className="font-semibold text-brand-600 hover:underline">Certificates page</a>.
+                      </p>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[11px] sm:text-xs text-ink-400">
+                    These people&apos;s signature blocks are printed on this course&apos;s completion certificate.
+                    With none selected, the first signatory signs. Manage the pool on the Certificates page.
+                  </p>
+                </div>
+              </Field>
+
               <Field label="Requirements (one per line)">
                 <textarea name="instructions" className="input w-full min-h-[80px]" placeholder="Any prerequisites before taking this course?" />
               </Field>

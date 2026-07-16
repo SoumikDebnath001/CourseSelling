@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Types } from "mongoose";
 import { z } from "zod";
 import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
@@ -56,12 +57,22 @@ export const createCourseSchema = z.object({
   instructions: z.union([z.string(), z.array(z.string())]).optional(),
   certificateColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #4f46e5").optional(),
   certificateOrientation: z.enum(["portrait", "landscape"]).optional(),
+  /** Ids of the certificate signatories (Settings.certificate.signatories, max 3). */
+  certificateSignatories: z.union([z.string(), z.array(z.string())]).optional(),
   courseType: z.enum(["progressive", "miscellaneous"]).default("progressive"),
   level: z.string().min(1).default("foundation"),
   maxLevel: z.string().optional(),
   points: z.coerce.number().int().min(0).default(0),
   requiresPhysicalAssessment: formBoolean.optional(),
 });
+
+/** Parses a signatory-id selection from form data: valid ObjectIds only, capped at 3. */
+function toSignatoryIds(v?: string | string[]): Types.ObjectId[] {
+  return toArray(v)
+    .filter((id) => Types.ObjectId.isValid(id))
+    .slice(0, 3)
+    .map((id) => new Types.ObjectId(id));
+}
 
 function toArray(v?: string | string[]): string[] {
   if (!v) return [];
@@ -103,6 +114,7 @@ export const createCourse = asyncHandler(async (req: Request, res: Response) => 
     category: body.category || undefined,
     certificateColor: body.certificateColor || undefined,
     certificateOrientation: body.certificateOrientation || undefined,
+    certificateSignatories: toSignatoryIds(body.certificateSignatories),
     courseType: body.courseType ?? "progressive",
     level: body.level || "foundation",
     // Standalone (miscellaneous) courses sit at a single level — no level range.
@@ -148,6 +160,7 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   if (body.instructions !== undefined) course.instructions = toArray(body.instructions);
   if (body.certificateColor !== undefined) course.certificateColor = body.certificateColor;
   if (body.certificateOrientation !== undefined) course.certificateOrientation = body.certificateOrientation;
+  if (body.certificateSignatories !== undefined) course.certificateSignatories = toSignatoryIds(body.certificateSignatories);
   if (body.courseType !== undefined) course.courseType = body.courseType;
   if (body.level !== undefined) course.level = body.level;
   if (body.maxLevel !== undefined) course.maxLevel = (body.maxLevel || undefined) as never;

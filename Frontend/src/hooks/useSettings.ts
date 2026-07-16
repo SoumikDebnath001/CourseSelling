@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api, apiError } from "@/lib/axios";
 import type { Settings } from "@/types/api";
+import { DEFAULT_TERMS } from "@/lib/terms";
 
 /** Sensible defaults so the UI renders before settings load / if the request fails. */
 export const DEFAULT_LEVELS = [
@@ -36,6 +37,7 @@ export const DEFAULT_CERTIFICATE_BRANDING = {
   coachName: "Coach David Obuya",
   roleLine1: "High Performance Coach Level 3",
   roleLine2: "ICC Tutor — Africa",
+  signatories: [],
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: Settings = {
   about: { images: [] },
   socials: {},
   socialOrder: {},
+  terms: { content: DEFAULT_TERMS },
   footerLinks: DEFAULT_FOOTER_LINKS,
   watermark: { enabled: true, opacity: 0.04 },
   levels: DEFAULT_LEVELS,
@@ -66,11 +69,12 @@ export function useSettings() {
         ...s,
         hero: { ...s.hero },
         foundation: { ...s.foundation },
-        certificate: { ...DEFAULT_CERTIFICATE_BRANDING, ...s.certificate },
+        certificate: { ...DEFAULT_CERTIFICATE_BRANDING, ...s.certificate, signatories: s.certificate?.signatories ?? [] },
         footer: { ...s.footer },
         about: { images: [], ...s.about },
         socials: { ...s.socials },
         socialOrder: { ...s.socialOrder },
+        terms: { content: s.terms?.content || DEFAULT_TERMS },
         footerLinks: s.footerLinks?.length ? s.footerLinks : DEFAULT_FOOTER_LINKS,
         watermark: { ...DEFAULT_SETTINGS.watermark, ...s.watermark },
       } as Settings;
@@ -96,18 +100,65 @@ export function useUpdateSettings() {
   });
 }
 
-/** Admin: upload (and replace) the transparent PNG signature printed on certificates. */
-export function useUploadCertificateSignature() {
+/** Fields for creating/updating a certificate signatory (signature = transparent PNG). */
+export interface SignatoryInput {
+  name?: string;
+  roleLine1?: string;
+  roleLine2?: string;
+  signature?: File | null;
+}
+
+function signatoryFormData(input: SignatoryInput): FormData {
+  const fd = new FormData();
+  if (input.name !== undefined) fd.append("name", input.name);
+  if (input.roleLine1 !== undefined) fd.append("roleLine1", input.roleLine1);
+  if (input.roleLine2 !== undefined) fd.append("roleLine2", input.roleLine2);
+  if (input.signature) fd.append("signature", input.signature);
+  return fd;
+}
+
+/** Admin: add a person to the certificate-signatories pool. */
+export function useAddSignatory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) => {
-      const fd = new FormData();
-      fd.append("signature", file);
-      const { data } = await api.post<{ settings: Settings }>("/settings/certificate-signature", fd);
+    mutationFn: async (input: SignatoryInput) => {
+      const { data } = await api.post<{ settings: Settings }>("/settings/signatories", signatoryFormData(input));
       return data.settings;
     },
     onSuccess: () => {
-      toast.success("Signature updated");
+      toast.success("Signatory added");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Admin: update a signatory's details and/or replace their signature image. */
+export function useUpdateSignatory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: SignatoryInput & { id: string }) => {
+      const { data } = await api.put<{ settings: Settings }>(`/settings/signatories/${id}`, signatoryFormData(input));
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Signatory updated");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/** Admin: remove a signatory from the pool. */
+export function useDeleteSignatory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete<{ settings: Settings }>(`/settings/signatories/${id}`);
+      return data.settings;
+    },
+    onSuccess: () => {
+      toast.success("Signatory removed");
       qc.invalidateQueries({ queryKey: ["settings"] });
     },
     onError: (e) => toast.error(apiError(e)),
