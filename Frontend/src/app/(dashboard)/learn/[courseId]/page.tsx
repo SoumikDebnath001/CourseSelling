@@ -58,7 +58,12 @@ function LearnInner({ courseId }: { courseId: string }) {
   // (server gates on all topics done + final test passed + physical assessment when required).
   const courseCertEarned = certificateLevels.includes(course.level);
   const courseApplication = physicalAssessments.find((p) => p.scope === "course");
-  const needsCoursePhysical = !!course.requiresPhysicalAssessment && !courseApplication;
+  // Same qualifying-test gate as progressive sections: the whole course's content + final
+  // test must be done before the physical assessment can even be applied for.
+  const allTopicsDone = totalTopics > 0 && completedCount === totalTopics;
+  const courseFinalOk = !course.finalTest?.isPublished || passedSet.has(course.finalTest._id);
+  const courseReadyForPhysical = allTopicsDone && courseFinalOk;
+  const needsCoursePhysical = !!course.requiresPhysicalAssessment && !courseCertEarned;
   const earnedCertCount = sectionStatus.filter((s) => s.certificateEarned).length;
 
   // Generate a certificate for a given level (label appended for progressive sections).
@@ -121,12 +126,30 @@ function LearnInner({ courseId }: { courseId: string }) {
                 <Award className="h-4 w-4" /> {earnedCertCount}/{sectionStatus.length} Certificates
               </button>
             ) : needsCoursePhysical ? (
-              <button
-                onClick={() => setPhysModal({ scope: "course", title: course.courseName })}
-                className="flex shrink-0 items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-pitch-700 transition hover:bg-white/90"
-              >
-                <ShieldCheck className="h-4 w-4" /> Physical assessment
-              </button>
+              courseApplication?.revoked ? (
+                <div className="flex shrink-0 items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white/70">
+                  <ShieldCheck className="h-4 w-4" /> Assessment closed
+                </div>
+              ) : courseApplication?.status === "failed" ? (
+                <button
+                  onClick={() => setPhysModal({ scope: "course", title: course.courseName })}
+                  className="flex shrink-0 items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-pitch-700 transition hover:bg-white/90"
+                >
+                  <ShieldCheck className="h-4 w-4" /> Redo assessment
+                </button>
+              ) : courseApplication ? (
+                <div className="flex shrink-0 items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold text-white/90">
+                  <ShieldCheck className="h-4 w-4" />
+                  {courseApplication.status === "pending" ? "Assessment: pending review" : "Assessment scheduled — check your email"}
+                </div>
+              ) : courseReadyForPhysical ? (
+                <button
+                  onClick={() => setPhysModal({ scope: "course", title: course.courseName })}
+                  className="flex shrink-0 items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-pitch-700 transition hover:bg-white/90"
+                >
+                  <ShieldCheck className="h-4 w-4" /> Physical assessment
+                </button>
+              ) : null
             ) : (
               <button
                 onClick={() => getCertificate()}
@@ -222,6 +245,16 @@ function LearnInner({ courseId }: { courseId: string }) {
           scope={physModal.scope}
           level={physModal.level}
           title={physModal.title}
+          initialCode={
+            physModal.scope === "course"
+              ? courseApplication?.whatsappCountryCode
+              : sectionStatus.find((s) => s.levelKey === physModal.level)?.physicalAssessment?.whatsappCountryCode
+          }
+          initialNumber={
+            physModal.scope === "course"
+              ? courseApplication?.whatsappNumber
+              : sectionStatus.find((s) => s.levelKey === physModal.level)?.physicalAssessment?.whatsappNumber
+          }
           onClose={() => setPhysModal(null)}
         />
       )}

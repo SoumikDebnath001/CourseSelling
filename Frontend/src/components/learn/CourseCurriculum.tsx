@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, CheckCircle2, PlayCircle, ClipboardCheck, Trophy, X, Lock, ShieldCheck, Award } from "lucide-react";
+import { ChevronDown, CheckCircle2, PlayCircle, FileText, ClipboardCheck, Trophy, X, Lock, ShieldCheck, Award } from "lucide-react";
 import type { Course, Module, SectionStatus, PhysicalAssessmentStatus } from "@/types/api";
 import { cn } from "@/lib/utils";
 
@@ -30,11 +30,20 @@ function fmtDuration(totalSec: number): string {
   return `${s}s`;
 }
 
-const physicalLabel: Record<PhysicalAssessmentStatus, string> = {
-  pending: "Physical assessment: pending review",
-  test_approved: "Approved — sit the offline test",
-  cert_approved: "Physical assessment passed",
-};
+function physicalStatusLabel(pa: { status: PhysicalAssessmentStatus; scheduledDate: string | null }): string {
+  switch (pa.status) {
+    case "pending":
+      return "Physical assessment: pending review";
+    case "scheduled":
+      return pa.scheduledDate
+        ? `Scheduled for ${new Date(pa.scheduledDate).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} — check your email for your QR code`
+        : "Approved — awaiting a scheduled date";
+    case "cert_approved":
+      return "Physical assessment passed";
+    case "failed":
+      return "Not passed — you can request another attempt";
+  }
+}
 
 export function CourseCurriculum({
   course,
@@ -99,7 +108,11 @@ export function CourseCurriculum({
                     active ? "bg-brand-50 text-brand-800" : "text-ink-600 hover:bg-ink-50"
                   )}
                 >
-                  <PlayCircle className={cn("h-4 w-4 shrink-0", active ? "text-brand-600" : "text-ink-300")} />
+                  {t.videoUrl ? (
+                    <PlayCircle className={cn("h-4 w-4 shrink-0", active ? "text-brand-600" : "text-ink-300")} />
+                  ) : (
+                    <FileText className={cn("h-4 w-4 shrink-0", active ? "text-brand-600" : "text-ink-300")} />
+                  )}
                   <span className="line-clamp-1 flex-1">{t.title}</span>
                   {t.timeDurationSec ? <span className="shrink-0 text-xs text-ink-400">{fmtDuration(t.timeDurationSec)}</span> : null}
                   <span
@@ -213,23 +226,42 @@ export function CourseCurriculum({
 
                         {st.requiresPhysicalAssessment && (
                           <div className="px-5 py-2.5">
-                            {st.physicalAssessment ? (
-                              <div className="flex items-center gap-2 text-sm text-ink-600">
-                                <ShieldCheck
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    st.physicalAssessment.status === "cert_approved" ? "text-pitch-600" : "text-sun-500"
-                                  )}
-                                />
-                                <span>{physicalLabel[st.physicalAssessment.status]}</span>
+                            {st.physicalAssessment?.revoked ? (
+                              <div className="flex items-center gap-2 text-sm text-ink-500">
+                                <ShieldCheck className="h-4 w-4 shrink-0 text-ink-300" />
+                                <span>This application has been closed by the academy.</span>
                               </div>
-                            ) : (
+                            ) : st.physicalAssessment ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-ink-600">
+                                  <ShieldCheck
+                                    className={cn(
+                                      "h-4 w-4 shrink-0",
+                                      st.physicalAssessment.status === "cert_approved" ? "text-pitch-600" : "text-sun-500"
+                                    )}
+                                  />
+                                  <span>{physicalStatusLabel(st.physicalAssessment)}</span>
+                                </div>
+                                {st.physicalAssessment.status === "failed" && (
+                                  <button
+                                    onClick={() => onApplyPhysical?.(st.levelKey, `${st.label} level`)}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-pitch-50 px-3 py-2 text-sm font-semibold text-pitch-700 hover:bg-pitch-100"
+                                  >
+                                    <ShieldCheck className="h-4 w-4" /> Request another attempt
+                                  </button>
+                                )}
+                              </div>
+                            ) : st.modulesDone && st.finalOk ? (
                               <button
                                 onClick={() => onApplyPhysical?.(st.levelKey, `${st.label} level`)}
                                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-pitch-50 px-3 py-2 text-sm font-semibold text-pitch-700 hover:bg-pitch-100"
                               >
                                 <ShieldCheck className="h-4 w-4" /> Apply for physical assessment
                               </button>
+                            ) : (
+                              <p className="flex items-center gap-2 text-xs text-ink-400">
+                                <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Finish this section&apos;s lessons and test to unlock the physical assessment application
+                              </p>
                             )}
                           </div>
                         )}

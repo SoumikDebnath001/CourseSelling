@@ -103,6 +103,51 @@ export function coursePassedEmail(name: string, courseName: string) {
   };
 }
 
+export function physicalAssessmentScheduledEmail(
+  name: string,
+  courseLabel: string,
+  scheduledDateFormatted: string,
+  qrCid: string
+) {
+  return {
+    subject: `Your physical assessment is scheduled — ${courseLabel}`,
+    html: baseLayout({
+      title: "Your physical assessment is scheduled 📅",
+      body: `<p>Hi ${name},</p>
+        <p>Your offline physical assessment for <strong>${courseLabel}</strong> has been scheduled for:</p>
+        <p style="font-size:17px;font-weight:700;color:#15803d;margin:10px 0;">${scheduledDateFormatted}</p>
+        <p>Bring this email (or a screenshot of the QR code below) with you on the day — our team will scan it to check you in:</p>
+        <div style="margin:18px 0;text-align:center;">
+          <img src="cid:${qrCid}" alt="Check-in QR code" width="220" height="220" style="border-radius:12px;border:1px solid #e2e8f0;" />
+        </div>
+        <p style="font-size:13px;color:#64748b;">On the day, we'll send a one-time verification code to this email address as part of checking you in — keep your inbox handy.</p>`,
+    }),
+  };
+}
+
+export function physicalAssessmentOtpEmail(name: string, otp: string) {
+  return {
+    subject: "Your physical assessment check-in code — Cricket Academy",
+    html: baseLayout({
+      title: "Check-in verification code 🔐",
+      body: `<p>Hi ${name},</p><p>Share this code with our team to check in for your physical assessment:</p>${otpBlock(otp)}`,
+    }),
+  };
+}
+
+export function physicalAssessmentResultEmail(name: string, courseLabel: string, passed: boolean) {
+  return {
+    subject: passed ? `You passed your physical assessment — ${courseLabel}` : `Physical assessment result — ${courseLabel}`,
+    html: baseLayout({
+      title: passed ? "You passed! ✅" : "Physical assessment result",
+      body: passed
+        ? `<p>Hi ${name},</p><p>Congratulations — you passed the offline physical assessment for <strong>${courseLabel}</strong>. Your certificate is now unlocked.</p>`
+        : `<p>Hi ${name},</p><p>You didn't pass the offline physical assessment for <strong>${courseLabel}</strong> this time. You can request another attempt from your course page whenever you're ready.</p>`,
+      cta: passed ? { label: "View your certificate", url: `${env.CLIENT_URL}/dashboard` } : undefined,
+    }),
+  };
+}
+
 export function commentReplyEmail(name: string, replierName: string, courseName: string, courseSlug: string) {
   return {
     subject: `${replierName} replied to your comment`,

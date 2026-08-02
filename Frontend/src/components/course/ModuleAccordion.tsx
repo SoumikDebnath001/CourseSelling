@@ -34,7 +34,7 @@ function ModuleRow({ module, defaultOpen }: { module: Module; defaultOpen?: bool
           {module.topics.map((t) => (
             <li key={t._id} className="flex items-center justify-between py-1.5 text-sm text-ink-600">
               <span className="flex items-center gap-2">
-                <PlayCircle className="h-4 w-4 text-ink-400" />
+                {t.videoUrl ? <PlayCircle className="h-4 w-4 text-ink-400" /> : <FileText className="h-4 w-4 text-ink-400" />}
                 {t.title}
               </span>
               <span className="flex items-center gap-3 text-xs text-ink-400">

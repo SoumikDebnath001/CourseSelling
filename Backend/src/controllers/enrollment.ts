@@ -150,7 +150,7 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
       .select("userId course courseName level label serial issuedAt")
       .lean(),
     PhysicalAssessmentApplication.find({ userId, course: course._id })
-      .select("level scope status whatsappCountryCode whatsappNumber")
+      .select("level scope status whatsappCountryCode whatsappNumber scheduledDate revoked")
       .lean(),
     getLevels(),
   ]);
@@ -204,7 +204,13 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
         complete: modulesDone && finalOk && physOk,
         certificateEarned,
         physicalAssessment: app
-          ? { status: app.status, whatsappCountryCode: app.whatsappCountryCode, whatsappNumber: app.whatsappNumber }
+          ? {
+              status: app.status,
+              whatsappCountryCode: app.whatsappCountryCode,
+              whatsappNumber: app.whatsappNumber,
+              scheduledDate: app.scheduledDate ?? null,
+              revoked: app.revoked ?? false,
+            }
           : null,
       };
     });
@@ -226,6 +232,8 @@ export const getFullCourse = asyncHandler(async (req: Request, res: Response) =>
       status: a.status,
       whatsappCountryCode: a.whatsappCountryCode,
       whatsappNumber: a.whatsappNumber,
+      scheduledDate: a.scheduledDate ?? null,
+      revoked: a.revoked ?? false,
     })),
   });
 });

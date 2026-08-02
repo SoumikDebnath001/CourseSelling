@@ -15,8 +15,12 @@ import {
 } from "../controllers/admin";
 import {
   listApplications,
-  approveForTest,
-  approveForCertificate,
+  scheduleAssessment,
+  getVerifyDetails,
+  sendOtp,
+  verifyOtp,
+  recordResult,
+  setRevoked,
 } from "../controllers/physicalAssessment";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 
@@ -37,7 +41,11 @@ router.delete("/students/:userId/grant/:courseId", requireAuth, requireAdmin, re
 
 // Physical-assessment applications
 router.get("/physical-assessments", requireAuth, requireAdmin, listApplications);
-router.patch("/physical-assessments/:id/approve-test", requireAuth, requireAdmin, approveForTest);
-router.patch("/physical-assessments/:id/approve-certificate", requireAuth, requireAdmin, approveForCertificate);
+router.patch("/physical-assessments/:id/schedule", requireAuth, requireAdmin, scheduleAssessment);
+router.get("/physical-assessments/:id/verify", requireAuth, requireAdmin, getVerifyDetails);
+router.post("/physical-assessments/:id/send-otp", requireAuth, requireAdmin, sendOtp);
+router.post("/physical-assessments/:id/verify-otp", requireAuth, requireAdmin, verifyOtp);
+router.patch("/physical-assessments/:id/result", requireAuth, requireAdmin, recordResult);
+router.patch("/physical-assessments/:id/revoke", requireAuth, requireAdmin, setRevoked);
 
 export default router;

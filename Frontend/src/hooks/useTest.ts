@@ -15,11 +15,17 @@ export function useTestForTaking(testId: string | null) {
   });
 }
 
+export interface SubmitTestPayload {
+  /** Required for assemblyMode "random" tests — the attemptId returned by useTestForTaking. */
+  attemptId?: string;
+  answers: { questionId: string; selectedOptions: number[] }[];
+}
+
 export function useSubmitTest(testId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (answers: { questionIndex: number; selectedOption: number }[]) => {
-      const { data } = await api.post<{ success: boolean } & SubmitResult>(`/tests/${testId}/submit`, { answers });
+    mutationFn: async (payload: SubmitTestPayload) => {
+      const { data } = await api.post<{ success: boolean } & SubmitResult>(`/tests/${testId}/submit`, payload);
       return data;
     },
     onSuccess: (data) => {

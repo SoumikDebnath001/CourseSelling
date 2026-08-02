@@ -1,3 +1,25 @@
+8/1/2026, 8:54:18 PM
+user -> test -> qualify -> qr -> admin sacan qr -> send otp to user-> admin verify -> test -> pass-> cirtiticate -> else -> admin fails the student in physical assesment -> and user will get the otion to redo the physical assesment
+===================================================
+8/1/2026, 6:53:35 PM
+in  courses while creating test i need 2 type of qs 1.MCQ (single choice) 2.(multiple choice qs)
+
+mcq is the current qs  
+the  student sould be able to choose multiple ans and if  one is correct then  they will get numbber according to the selection 
+6 option 3 right option and 2 selected by the studetn then accorting to the percetaage ratio student will get the total number 
+
+
+admin should be able ot give marks for each qs and negative for each qs 
+there will be a situation all qs same marks and same neg or diff qs diff marks 
+ 
+Scramble questions and answers courses website so that no same number question and answer 
+100 questions and scramble questions admin will give say 20 number worth  of question ebar 20 number er exam hobe backend random kore debe 20 marks baki question number o same hote hobe ar age theke backend ke bole dite hobe je 1 mark, 2 mark, 3 mark questions sudhu hobe tumi combo bolo possible gulo for 20 marks 
+
+When the pdf or module ends it should be marked as checked in automatic after confirmation it will be checked right and also it will be re-openable
+
+
+Slot for video showing in the course website even if video is not uploaded at all. If no video is uploaded then that section will not be visible to the students. Whatever is uploaded only that section should be displayed on the frontend, there should be no empty fields visible.
+===================================================
 7/16/2026, 1:08:58 AM
 ❯ the user may form the old table /home/soumik/Work Space/W/new computer/CourseSelling/models  form here or from the new table only for online learner so pick the name to create qr from there aslo in this site where ever time is mentioned as well as in cirtificate mention the timezone according ot kenya and the whole website whoule run accordin to that time zone EAT            remove the file section form the admin pannel no need for that pannel instead of this where ever i am uploading something mention after uploading the size and fromat of the size eg. if i upload a signature after uploading i will be able to see that uploaded 4Mb file in sign.png like this
 ===================================================

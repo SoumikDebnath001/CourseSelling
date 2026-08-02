@@ -296,11 +296,11 @@ export const getAdminCourse = asyncHandler(async (req: Request, res: Response) =
       options: { sort: { order: 1 } },
       populate: [
         { path: "topics", options: { sort: { order: 1 } } },
-        { path: "test", select: "title scope isPublished questions" },
+        { path: "test", select: "title scope isPublished assemblyMode randomConfig questions" },
       ],
     })
-    .populate("finalTest", "title scope isPublished questions")
-    .populate("sections.finalTest", "title scope isPublished questions")
+    .populate("finalTest", "title scope isPublished assemblyMode randomConfig questions")
+    .populate("sections.finalTest", "title scope isPublished assemblyMode randomConfig questions")
     .lean();
   if (!course) throw new ApiError(404, "Course not found");
   signCourseAssets(course as Parameters<typeof signCourseAssets>[0], { videos: true });

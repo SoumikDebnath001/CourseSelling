@@ -13,16 +13,19 @@ interface Props {
   level?: string;
   title: string;
   onClose: () => void;
+  /** Pre-fill from a previous (e.g. failed) application when requesting another attempt. */
+  initialCode?: string;
+  initialNumber?: string;
 }
 
 /**
  * Collects the student's WhatsApp number (country code + number) and applies for the offline
  * physical assessment that gates a certificate. An admin reviews it in the admin panel.
  */
-export function PhysicalAssessmentModal({ courseId, scope, level, title, onClose }: Props) {
+export function PhysicalAssessmentModal({ courseId, scope, level, title, onClose, initialCode, initialNumber }: Props) {
   const submit = useSubmitPhysicalAssessment(courseId);
-  const [code, setCode] = useState("+254");
-  const [number, setNumber] = useState("");
+  const [code, setCode] = useState(initialCode || "+254");
+  const [number, setNumber] = useState(initialNumber ?? "");
 
   const valid = /^\+?\d{1,5}$/.test(code.trim()) && /^\d{4,15}$/.test(number.replace(/\s/g, ""));
 

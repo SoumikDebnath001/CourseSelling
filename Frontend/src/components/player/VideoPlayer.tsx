@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { Download, FileText, LinkIcon, Check } from "lucide-react";
-import type { Topic } from "@/types/api";
+import type { Resource, Topic } from "@/types/api";
 import { formatBytes, formatLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { PdfViewer } from "./PdfViewer";
+
+function isPdfResource(r: Resource): boolean {
+  return r.format === "pdf" || r.name.toLowerCase().endsWith(".pdf");
+}
 
 interface Props {
   topic: Topic;
@@ -50,6 +55,8 @@ function CourseVideo({ topic, onEnded }: { topic: Topic; onEnded: () => void }) 
 }
 
 export function VideoPlayer({ topic, completed, onComplete, completing }: Props) {
+  const [openPdf, setOpenPdf] = useState<Resource | null>(null);
+
   // Tick automatically the moment the video finishes (idempotent on the server).
   const handleEnded = () => {
     if (!completed) onComplete();
@@ -101,14 +108,9 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
         <div className="mt-5">
           <h2 className="mb-2 text-sm font-semibold text-ink-700">Resources</h2>
           <ul className="space-y-2">
-            {topic.resources.map((r, i) => (
-              <li key={r._id ?? i}>
-                <a
-                  href={r.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-700 hover:bg-ink-50"
-                >
+            {topic.resources.map((r, i) => {
+              const content = (
+                <>
                   {r.type === "link" ? <LinkIcon className="h-4 w-4 shrink-0 text-pitch-600" /> : <FileText className="h-4 w-4 shrink-0 text-pitch-600" />}
                   <span className="flex-1 truncate">{r.name}</span>
                   {/* Format + size shown up front, before the student downloads. */}
@@ -121,11 +123,43 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
                       <Download className="h-4 w-4 shrink-0 text-ink-400" />
                     </>
                   )}
-                </a>
-              </li>
-            ))}
+                </>
+              );
+              return (
+                <li key={r._id ?? i}>
+                  {r.url && isPdfResource(r) ? (
+                    <button
+                      type="button"
+                      onClick={() => setOpenPdf(r)}
+                      className="flex w-full items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-left text-sm text-ink-700 hover:bg-ink-50"
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-700 hover:bg-ink-50"
+                    >
+                      {content}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
+      )}
+
+      {openPdf?.url && (
+        <PdfViewer
+          name={openPdf.name}
+          url={openPdf.url}
+          completed={completed}
+          onConfirmComplete={onComplete}
+          onClose={() => setOpenPdf(null)}
+        />
       )}
     </div>
   );

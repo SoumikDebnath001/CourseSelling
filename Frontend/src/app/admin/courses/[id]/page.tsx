@@ -153,6 +153,13 @@ function Builder({ courseId }: { courseId: string }) {
           section={testTarget.scope === "section" ? testTarget.section : undefined}
           existing={testTarget.existing}
           saving={actions.saveTest.isPending}
+          requiresPhysicalAssessment={
+            testTarget.scope === "course"
+              ? course.requiresPhysicalAssessment
+              : testTarget.scope === "section"
+                ? course.sections?.find((s) => s.levelKey === testTarget.section)?.requiresPhysicalAssessment
+                : false
+          }
           onSave={(payload, id) =>
             actions.saveTest.mutate({ id, payload }, { onSuccess: () => setTestTarget(null) })
           }

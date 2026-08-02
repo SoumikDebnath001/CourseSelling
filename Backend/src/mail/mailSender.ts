@@ -16,18 +16,34 @@ function getTransporter(): Transporter | null {
   return transporter;
 }
 
+export interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  cid: string;
+  contentType?: string;
+}
+
 /**
  * Best-effort mail send. Never throws into the request flow — a failed email must
  * not fail an enrollment or a test submission. Returns true if dispatched.
+ *
+ * Images MUST be sent as CID-embedded attachments, not `data:` URI `<img>` tags —
+ * Gmail and most other webmail clients strip base64 data URIs from HTML email bodies,
+ * which renders as a blank image with no error.
  */
-export async function mailSender(to: string, subject: string, html: string): Promise<boolean> {
+export async function mailSender(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: MailAttachment[]
+): Promise<boolean> {
   const t = getTransporter();
   if (!t) {
     console.warn(`✉️  Mail skipped (not configured) → "${subject}" to ${to}`);
     return false;
   }
   try {
-    const info = await t.sendMail({ from: env.MAIL_FROM, to, subject, html });
+    const info = await t.sendMail({ from: env.MAIL_FROM, to, subject, html, attachments });
     console.log(`✉️  Mail sent → ${to} (${info.messageId})`);
     return true;
   } catch (err) {
@@ -37,6 +53,6 @@ export async function mailSender(to: string, subject: string, html: string): Pro
 }
 
 /** Fire-and-forget helper for non-blocking sends after a DB write succeeds. */
-export function sendMailAsync(to: string, subject: string, html: string): void {
-  void mailSender(to, subject, html);
+export function sendMailAsync(to: string, subject: string, html: string, attachments?: MailAttachment[]): void {
+  void mailSender(to, subject, html, attachments);
 }

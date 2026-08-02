@@ -350,24 +350,81 @@ export function usePhysicalAssessmentApplications(filter: "pending" | "approved"
   });
 }
 
-function useApprovalMutation(path: (id: string) => string, success: string) {
+function invalidateApplications(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["physical-assessments"] });
+  qc.invalidateQueries({ queryKey: ["admin-students"] });
+}
+
+export function useScheduleAssessment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(path(id)),
+    mutationFn: (vars: { id: string; scheduledDate: string }) =>
+      api.patch(`/admin/physical-assessments/${vars.id}/schedule`, { scheduledDate: vars.scheduledDate }),
     onSuccess: () => {
-      toast.success(success);
-      qc.invalidateQueries({ queryKey: ["physical-assessments"] });
-      qc.invalidateQueries({ queryKey: ["admin-students"] });
+      toast.success("Scheduled — QR code emailed to the student");
+      invalidateApplications(qc);
     },
     onError: (e) => toast.error(apiError(e)),
   });
 }
 
-export function useApproveForTest() {
-  return useApprovalMutation((id) => `/admin/physical-assessments/${id}/approve-test`, "Approved for test");
+export function useRecordResult() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; passed: boolean }) =>
+      api.patch(`/admin/physical-assessments/${vars.id}/result`, { passed: vars.passed }),
+    onSuccess: (_data, vars) => {
+      toast.success(vars.passed ? "Marked as passed — certificate unlocked" : "Marked as not passed");
+      invalidateApplications(qc);
+      qc.invalidateQueries({ queryKey: ["physical-assessment-verify"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
 }
-export function useApproveForCertificate() {
-  return useApprovalMutation((id) => `/admin/physical-assessments/${id}/approve-certificate`, "Approved for certificate");
+
+export function useToggleRevoke() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; revoked: boolean }) =>
+      api.patch(`/admin/physical-assessments/${vars.id}/revoke`, { revoked: vars.revoked }),
+    onSuccess: (_data, vars) => {
+      toast.success(vars.revoked ? "Application revoked" : "Revoke undone");
+      invalidateApplications(qc);
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+/* ── Physical assessment verify page (QR scan / desk link) ──────────── */
+export function useVerifyApplication(id: string, token: string) {
+  return useQuery({
+    queryKey: ["physical-assessment-verify", id, token],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data } = await api.get(`/admin/physical-assessments/${id}/verify`, { params: { token } });
+      return data.application as import("@/types/api").PhysicalAssessmentVerifyDetail;
+    },
+  });
+}
+
+export function useSendOtp() {
+  return useMutation({
+    mutationFn: (vars: { id: string; token: string }) => api.post(`/admin/physical-assessments/${vars.id}/send-otp`, { token: vars.token }),
+    onError: (e) => toast.error(apiError(e)),
+  });
+}
+
+export function useVerifyOtp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; token: string; otp: string }) =>
+      api.post(`/admin/physical-assessments/${vars.id}/verify-otp`, { token: vars.token, otp: vars.otp }),
+    onSuccess: () => {
+      toast.success("Check-in verified");
+      qc.invalidateQueries({ queryKey: ["physical-assessment-verify"] });
+    },
+    onError: (e) => toast.error(apiError(e)),
+  });
 }
 
 export function useCategoriesAdmin() {

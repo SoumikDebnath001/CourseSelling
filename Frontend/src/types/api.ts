@@ -147,6 +147,26 @@ export interface Topic {
   points?: number;
 }
 
+export interface AdminQuestion {
+  _id?: string;
+  questionText: string;
+  type: "single" | "multiple";
+  options: string[];
+  /** Used when type === "single". */
+  correctOption?: number;
+  /** Used when type === "multiple". */
+  correctOptions?: number[];
+  points: number;
+  negativeMarks?: number;
+  negativePerWrongOption?: number;
+  explanation?: string;
+}
+
+export interface TestRandomConfig {
+  targetQuestionCount: number;
+  targetTotalMarks: number;
+}
+
 export interface TestRef {
   _id: string;
   title: string;
@@ -155,7 +175,9 @@ export interface TestRef {
   passingScorePct?: number;
   timeLimitMins?: number;
   isPublished?: boolean;
-  questions?: unknown[];
+  assemblyMode?: "fixed" | "random";
+  randomConfig?: TestRandomConfig;
+  questions?: AdminQuestion[];
 }
 
 export interface Module {
@@ -300,9 +322,18 @@ export interface CommentNode {
   replies?: CommentNode[];
 }
 
+/** An option as shown to the student. `originalIndex` must always be echoed back on submit —
+ *  never the option's display position, since random-mode tests shuffle option order per attempt. */
+export interface TestOption {
+  text: string;
+  originalIndex: number;
+}
+
 export interface TestQuestionPublic {
+  _id: string;
+  type: "single" | "multiple";
   questionText: string;
-  options: string[];
+  options: TestOption[];
   points: number;
 }
 
@@ -313,14 +344,19 @@ export interface TestForTaking {
   scope: "module" | "course";
   passingScorePct: number;
   timeLimitMins?: number;
+  assemblyMode?: "fixed" | "random";
+  /** Present only for assemblyMode "random" — must be echoed back on submit. */
+  attemptId?: string;
   questions: TestQuestionPublic[];
 }
 
 export interface TestReviewItem {
-  questionIndex: number;
-  correctOption: number;
-  selectedOption: number | null;
+  questionId: string;
+  correctOptions: number[];
+  selectedOptions: number[];
   correct: boolean;
+  pointsEarned: number;
+  pointsPossible: number;
   explanation?: string;
 }
 
@@ -336,7 +372,7 @@ export interface Progress {
   passedTests: string[];
 }
 
-export type PhysicalAssessmentStatus = "pending" | "test_approved" | "cert_approved";
+export type PhysicalAssessmentStatus = "pending" | "scheduled" | "cert_approved" | "failed";
 
 /** Computed per-section state returned by the learn (full-course) endpoint. */
 export interface SectionStatus {
@@ -353,6 +389,8 @@ export interface SectionStatus {
     status: PhysicalAssessmentStatus;
     whatsappCountryCode: string;
     whatsappNumber: string;
+    scheduledDate: string | null;
+    revoked: boolean;
   } | null;
 }
 
@@ -363,6 +401,8 @@ export interface PhysicalAssessmentEntry {
   status: PhysicalAssessmentStatus;
   whatsappCountryCode: string;
   whatsappNumber: string;
+  scheduledDate: string | null;
+  revoked: boolean;
 }
 
 /** One row in the admin "Physical Assessment Applications" panel. */
@@ -375,6 +415,26 @@ export interface PhysicalAssessmentApplication {
   level: string;
   levelLabel: string;
   status: PhysicalAssessmentStatus;
+  scheduledDate: string | null;
+  qrToken: string | null;
+  otpVerifiedAt: string | null;
+  revoked: boolean;
   course: { _id: string; courseName: string } | null;
   createdAt?: string;
+}
+
+/** Detail shape returned by the admin verify-page endpoint (QR scan / desk link). */
+export interface PhysicalAssessmentVerifyDetail {
+  _id: string;
+  studentName: string;
+  whatsappCountryCode: string;
+  whatsappNumber: string;
+  scope: "course" | "section";
+  level: string;
+  levelLabel: string;
+  status: PhysicalAssessmentStatus;
+  scheduledDate: string | null;
+  otpVerifiedAt: string | null;
+  revoked: boolean;
+  course: { _id: string; courseName: string } | null;
 }

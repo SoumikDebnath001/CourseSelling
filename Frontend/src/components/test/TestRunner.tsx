@@ -11,13 +11,29 @@ import { cn } from "@/lib/utils";
 export function TestRunner({ testId, onClose }: { testId: string; onClose: () => void }) {
   const { data: test, isLoading } = useTestForTaking(testId);
   const submit = useSubmitTest(testId);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number[]>>({});
   const [result, setResult] = useState<SubmitResult | null>(null);
 
+  const selectSingle = (questionId: string, originalIndex: number) =>
+    setAnswers((a) => ({ ...a, [questionId]: [originalIndex] }));
+
+  const toggleMultiple = (questionId: string, originalIndex: number) =>
+    setAnswers((a) => {
+      const current = a[questionId] ?? [];
+      const next = current.includes(originalIndex) ? current.filter((x) => x !== originalIndex) : [...current, originalIndex];
+      return { ...a, [questionId]: next };
+    });
+
   const onSubmit = () => {
-    const payload = Object.entries(answers).map(([qi, opt]) => ({ questionIndex: Number(qi), selectedOption: opt }));
+    if (!test) return;
+    const payload = {
+      attemptId: test.attemptId,
+      answers: Object.entries(answers).map(([questionId, selectedOptions]) => ({ questionId, selectedOptions })),
+    };
     submit.mutate(payload, { onSuccess: (data) => setResult(data) });
   };
+
+  const allAnswered = !!test && test.questions.every((q) => (answers[q._id]?.length ?? 0) > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
@@ -36,29 +52,35 @@ export function TestRunner({ testId, onClose }: { testId: string; onClose: () =>
             <div className="space-y-6">
               {test.description && <p className="text-sm text-ink-500">{test.description}</p>}
               {test.questions.map((q, qi) => (
-                <div key={qi}>
+                <div key={q._id}>
                   <p className="font-semibold text-ink-900">
                     {qi + 1}. {q.questionText}
+                    {q.type === "multiple" && <span className="ml-2 text-xs font-normal text-ink-400">(select all that apply)</span>}
                   </p>
                   <div className="mt-2 space-y-2">
-                    {q.options.map((opt, oi) => (
-                      <label
-                        key={oi}
-                        className={cn(
-                          "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                          answers[qi] === oi ? "border-pitch-500 bg-pitch-50" : "border-ink-200 hover:bg-ink-50"
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name={`q-${qi}`}
-                          checked={answers[qi] === oi}
-                          onChange={() => setAnswers((a) => ({ ...a, [qi]: oi }))}
-                          className="accent-pitch-600"
-                        />
-                        {opt}
-                      </label>
-                    ))}
+                    {q.options.map((opt) => {
+                      const selected = (answers[q._id] ?? []).includes(opt.originalIndex);
+                      return (
+                        <label
+                          key={opt.originalIndex}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                            selected ? "border-pitch-500 bg-pitch-50" : "border-ink-200 hover:bg-ink-50"
+                          )}
+                        >
+                          <input
+                            type={q.type === "multiple" ? "checkbox" : "radio"}
+                            name={`q-${q._id}`}
+                            checked={selected}
+                            onChange={() =>
+                              q.type === "multiple" ? toggleMultiple(q._id, opt.originalIndex) : selectSingle(q._id, opt.originalIndex)
+                            }
+                            className="accent-pitch-600"
+                          />
+                          {opt.text}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -75,7 +97,7 @@ export function TestRunner({ testId, onClose }: { testId: string; onClose: () =>
             <Button
               className="w-full"
               loading={submit.isPending}
-              disabled={!test || Object.keys(answers).length !== test.questions.length}
+              disabled={!allAnswered}
               onClick={onSubmit}
             >
               Submit test
@@ -99,15 +121,17 @@ function ResultView({ result }: { result: SubmitResult }) {
       </p>
 
       <div className="mt-6 space-y-2 text-left">
-        {result.review.map((r) => (
-          <div key={r.questionIndex} className="flex items-start gap-2 rounded-lg border border-ink-200 p-3 text-sm">
+        {result.review.map((r, i) => (
+          <div key={r.questionId} className="flex items-start gap-2 rounded-lg border border-ink-200 p-3 text-sm">
             {r.correct ? (
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-pitch-600" />
             ) : (
               <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-ball-600" />
             )}
             <div>
-              <span className="font-medium text-ink-700">Question {r.questionIndex + 1}</span>
+              <span className="font-medium text-ink-700">
+                Question {i + 1} — {r.pointsEarned}/{r.pointsPossible} pts
+              </span>
               {r.explanation && <p className="mt-0.5 text-ink-500">{r.explanation}</p>}
             </div>
           </div>
