@@ -64,13 +64,23 @@ export function VideoPlayer({ topic, completed, onComplete, completing }: Props)
 
   return (
     <div>
-      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
-        {topic.videoUrl ? (
+      {topic.videoUrl ? (
+        <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
           <CourseVideo topic={topic} onEnded={handleEnded} />
-        ) : (
-          <div className="flex h-full items-center justify-center text-ink-400">No video for this topic yet.</div>
-        )}
-      </div>
+        </div>
+      ) : topic.resources?.length > 0 ? (
+        <div className="rounded-xl border border-dashed border-ink-300 bg-ink-50 p-8 text-center">
+          <FileText className="mx-auto h-8 w-8 text-ink-400" />
+          <h3 className="mt-2 text-sm font-semibold text-ink-900">Resource Only Topic</h3>
+          <p className="mt-1 text-sm text-ink-500">
+            This topic does not have a video. Please download or preview the resources below to complete it.
+          </p>
+        </div>
+      ) : (
+        <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+          <div className="flex h-full items-center justify-center text-ink-400">No content for this topic yet.</div>
+        </div>
+      )}
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
