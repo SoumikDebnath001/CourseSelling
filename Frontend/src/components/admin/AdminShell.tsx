@@ -122,7 +122,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between px-5 py-4 border-b border-ink-100 bg-ink-50/50">
             <span className="font-extrabold text-ink-900">Admin Menu</span>
             <button 
-              className="p-2 text-ink-500 hover:text-brand-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
+              className="p-2 text-ink-500 hover:text-teal-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
               onClick={() => setIsSidebarOpen(false)}
               aria-label="Close menu"
             >
@@ -165,8 +165,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {confirming && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirming(false)}>
             <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ball-50">
-                <LogOut className="h-6 w-6 text-ball-600" />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-gold-50">
+                <LogOut className="h-6 w-6 text-rose-gold-600" />
               </div>
               <h3 className="mt-3 text-lg font-bold text-ink-900">Log out?</h3>
               <p className="mt-1 text-sm text-ink-500">Are you sure you want to log out of the admin panel?</p>

@@ -45,7 +45,7 @@ export default function AdminCoursesPage() {
                 <Link href={`/admin/courses/${c._id}`} className="btn-ghost ml-auto px-3 py-1.5 text-xs sm:ml-0"><Pencil className="h-3.5 w-3.5" /> Edit</Link>
                 <button
                   onClick={() => { if (confirm(`Delete "${c.courseName}"? This removes its videos and content.`)) del.mutate(c._id); }}
-                  className="rounded-lg p-2 text-ink-400 hover:bg-ball-50 hover:text-ball-600"
+                  className="rounded-lg p-2 text-ink-400 hover:bg-rose-gold-50 hover:text-rose-gold-600"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

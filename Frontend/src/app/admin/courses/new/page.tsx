@@ -53,7 +53,7 @@ export default function NewCoursePage() {
         <form onSubmit={onSubmit} className="space-y-6 sm:space-y-8">
           {/* Section 1: Basic Info */}
           <div className="card overflow-hidden border border-ink-200 shadow-sm">
-            <div className="bg-gradient-to-r from-brand-50 to-grape-50 px-5 py-4 sm:px-6 border-b border-ink-200">
+            <div className="bg-gradient-to-r from-teal-50 to-amber-50 px-5 py-4 sm:px-6 border-b border-ink-200">
               <h2 className="text-base sm:text-lg font-bold text-ink-900">Basic Information</h2>
             </div>
             <div className="p-5 sm:p-6 space-y-5">
@@ -71,7 +71,7 @@ export default function NewCoursePage() {
 
           {/* Section 2: Categorization & Progression */}
           <div className="card overflow-hidden border border-ink-200 shadow-sm">
-            <div className="bg-gradient-to-r from-brand-50 to-grape-50 px-5 py-4 sm:px-6 border-b border-ink-200">
+            <div className="bg-gradient-to-r from-teal-50 to-amber-50 px-5 py-4 sm:px-6 border-b border-ink-200">
               <h2 className="text-base sm:text-lg font-bold text-ink-900">Categorization & Progression</h2>
             </div>
             <div className="p-5 sm:p-6 space-y-6">
@@ -88,7 +88,7 @@ export default function NewCoursePage() {
               </div>
               <p className="-mt-3 text-[11px] sm:text-xs text-ink-500">
                 Every course must belong to a Path / Category to power filtering and progression.{" "}
-                <a href="/admin/categories" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">Manage paths →</a>
+                <a href="/admin/categories" className="font-semibold text-teal-600 hover:text-teal-700 hover:underline">Manage paths →</a>
               </p>
               
               <div className="h-px w-full bg-ink-100" />
@@ -130,7 +130,7 @@ export default function NewCoursePage() {
 
           {/* Section 3: Extra Details */}
           <div className="card overflow-hidden border border-ink-200 shadow-sm">
-            <div className="bg-gradient-to-r from-brand-50 to-grape-50 px-5 py-4 sm:px-6 border-b border-ink-200">
+            <div className="bg-gradient-to-r from-teal-50 to-amber-50 px-5 py-4 sm:px-6 border-b border-ink-200">
               <h2 className="text-base sm:text-lg font-bold text-ink-900">Settings & Media</h2>
             </div>
             <div className="p-5 sm:p-6 space-y-6">
@@ -161,7 +161,7 @@ export default function NewCoursePage() {
                           key={s._id}
                           className={
                             "flex cursor-pointer items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition " +
-                            (checked ? "border-grape-400 bg-grape-50 text-grape-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
+                            (checked ? "border-amber-400 bg-amber-50 text-amber-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
                           }
                         >
                           <input
@@ -180,7 +180,7 @@ export default function NewCoursePage() {
                     {signatoryPool.length === 0 && (
                       <p className="text-xs text-ink-400">
                         No signatories stored yet — add them on the{" "}
-                        <a href="/admin/certificates" className="font-semibold text-brand-600 hover:underline">Certificates page</a>.
+                        <a href="/admin/certificates" className="font-semibold text-teal-600 hover:underline">Certificates page</a>.
                       </p>
                     )}
                   </div>
@@ -201,7 +201,7 @@ export default function NewCoursePage() {
                     type="file"
                     accept=".png,.jpg,.jpeg,.webp,.gif,.avif,image/*"
                     onChange={(e) => setThumb(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-ink-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-100 file:text-brand-700 hover:file:bg-brand-200 cursor-pointer transition-colors"
+                    className="block w-full text-sm text-ink-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-teal-100 file:text-teal-700 hover:file:bg-teal-200 cursor-pointer transition-colors"
                   />
                   <p className="text-[11px] sm:text-xs text-ink-400">
                     Upload a 16:9 image to represent this course. Formats: PNG, JPG, WEBP, GIF, AVIF · no size limit.
@@ -218,7 +218,7 @@ export default function NewCoursePage() {
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button type="submit" loading={create.isPending} className="w-full sm:w-auto px-8 py-3.5 text-base shadow-xl shadow-brand-600/20 transition-transform hover:scale-[1.02] active:scale-[0.98]">
+            <Button type="submit" loading={create.isPending} className="w-full sm:w-auto px-8 py-3.5 text-base shadow-xl shadow-teal-600/20 transition-transform hover:scale-[1.02] active:scale-[0.98]">
               Create Course &amp; Add Content
             </Button>
           </div>

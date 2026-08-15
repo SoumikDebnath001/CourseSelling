@@ -53,7 +53,7 @@ export function AccountBar({
           {onMenuClick && (
             <button 
               onClick={onMenuClick} 
-              className="p-1.5 sm:hidden text-ink-600 bg-ink-50 hover:text-brand-600 hover:bg-ink-100 rounded-md transition-colors focus:outline-none"
+              className="p-1.5 sm:hidden text-ink-600 bg-ink-50 hover:text-teal-600 hover:bg-ink-100 rounded-md transition-colors focus:outline-none"
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />

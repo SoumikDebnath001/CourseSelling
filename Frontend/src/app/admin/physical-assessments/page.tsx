@@ -94,7 +94,7 @@ export default function PhysicalAssessmentsPage() {
       </div>
 
       {scanError && (
-        <p className="mt-3 rounded-lg bg-ball-50 px-3 py-2 text-sm text-ball-700">{scanError}</p>
+        <p className="mt-3 rounded-lg bg-rose-gold-50 px-3 py-2 text-sm text-rose-gold-700">{scanError}</p>
       )}
 
       {isLoading ? (
@@ -132,7 +132,7 @@ function ApplicationRow({ application: a }: { application: PhysicalAssessmentApp
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="font-semibold text-ink-900">{a.studentName}</h3>
           <StatusBadge status={a.status} />
-          {a.revoked && <span className="rounded-full bg-ball-100 px-2 py-0.5 text-xs font-semibold text-ball-700">Revoked</span>}
+          {a.revoked && <span className="rounded-full bg-rose-gold-100 px-2 py-0.5 text-xs font-semibold text-rose-gold-700">Revoked</span>}
         </div>
         <p className="mt-0.5 truncate text-sm text-ink-500">
           {a.course?.courseName ?? "—"} · {a.levelLabel} {a.scope === "section" ? "section" : "course"}
@@ -199,9 +199,9 @@ function ApplicationRow({ application: a }: { application: PhysicalAssessmentApp
 function StatusBadge({ status }: { status: PhysicalAssessmentApplication["status"] }) {
   const map = {
     pending: { label: "Pending", cls: "bg-ink-100 text-ink-500" },
-    scheduled: { label: "Scheduled", cls: "bg-sun-400/20 text-sun-500" },
+    scheduled: { label: "Scheduled", cls: "bg-amber-400/20 text-amber-500" },
     cert_approved: { label: "Certificate approved", cls: "bg-pitch-100 text-pitch-700" },
-    failed: { label: "Not passed", cls: "bg-ball-100 text-ball-700" },
+    failed: { label: "Not passed", cls: "bg-rose-gold-100 text-rose-gold-700" },
   } as const;
   const s = map[status];
   return <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", s.cls)}>{s.label}</span>;

@@ -50,7 +50,7 @@ export function LearnTopbar() {
             onClick={() => setOpen((v) => !v)}
             className="flex items-center gap-2 rounded-xl border border-ink-200 px-3 py-1.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-brand-600 to-grape-600 text-xs font-bold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-teal-600 to-amber-600 text-xs font-bold text-white">
               {account?.name?.charAt(0).toUpperCase() ?? <User className="h-3.5 w-3.5" />}
             </span>
             <span className="max-w-[140px] truncate">{account?.name ?? "Account"}</span>
@@ -79,7 +79,7 @@ export function LearnTopbar() {
               </Link>
               <button
                 onClick={doLogout}
-                className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-sm font-medium text-ball-600 hover:bg-ball-50"
+                className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-sm font-medium text-rose-gold-600 hover:bg-rose-gold-50"
               >
                 <LogOut className="h-4 w-4" /> Logout
               </button>

@@ -188,7 +188,7 @@ function SignatoriesCard() {
   return (
     <div className="card mt-6 p-5">
       <div className="flex items-center gap-2">
-        <PenLine className="h-5 w-5 text-grape-600" />
+        <PenLine className="h-5 w-5 text-amber-600" />
         <div>
           <p className="font-semibold text-ink-900">Certificate signatories</p>
           <p className="text-xs text-ink-400">
@@ -265,7 +265,7 @@ export default function IssuedCertificatesPage() {
               {certificates.map((c) => (
                 <tr key={c._id} className="border-b border-ink-50 last:border-0 hover:bg-ink-50/50">
                   <td className="px-4 py-3 font-mono font-semibold text-ink-900">
-                    <a href={`/verify/${encodeURIComponent(c.certificateId)}`} target="_blank" rel="noreferrer" title="Open the public verification page" className="hover:text-brand-600 hover:underline">
+                    <a href={`/verify/${encodeURIComponent(c.certificateId)}`} target="_blank" rel="noreferrer" title="Open the public verification page" className="hover:text-teal-600 hover:underline">
                       {c.certificateId}
                     </a>
                   </td>
@@ -275,7 +275,7 @@ export default function IssuedCertificatesPage() {
                   </td>
                   <td className="px-4 py-3 text-ink-700">{c.courseName}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full bg-sun-400/20 px-2 py-0.5 text-xs font-semibold text-sun-500">
+                    <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs font-semibold text-amber-500">
                       {c.label ?? c.level}
                     </span>
                   </td>

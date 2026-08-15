@@ -48,7 +48,7 @@ export function LevelSlider({
               onClick={() => onChange(l.key)}
               className={cn(
                 "relative z-10 flex-1 flex items-center justify-center py-2.5 px-2 rounded-xl transition-colors duration-200",
-                isActive ? "text-brand-700" : "text-ink-500 hover:text-ink-800"
+                isActive ? "text-teal-700" : "text-ink-500 hover:text-ink-800"
               )}
             >
               <span className="text-xs sm:text-sm font-bold tracking-tight">{l.label || l.name}</span>
@@ -59,9 +59,9 @@ export function LevelSlider({
 
       {/* Optional Description Box */}
       {showDescription && active && (
-        <div className="mt-2 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
-          <p className="text-sm font-extrabold text-brand-900">
-            {active.name} <span className="font-medium text-brand-600/80 ml-1">· {active.label || active.name}</span>
+        <div className="mt-2 rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+          <p className="text-sm font-extrabold text-teal-900">
+            {active.name} <span className="font-medium text-teal-600/80 ml-1">· {active.label || active.name}</span>
           </p>
           {active.description && <p className="mt-1 text-xs leading-relaxed text-ink-600">{active.description}</p>}
         </div>

@@ -82,7 +82,7 @@ export function CourseCurriculum({
           onClick={() => toggle(m._id)}
           className={cn(
             "flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition",
-            isOpen ? "bg-brand-50/60" : "hover:bg-ink-50"
+            isOpen ? "bg-teal-50/60" : "hover:bg-ink-50"
           )}
         >
           <div className="min-w-0">
@@ -105,13 +105,13 @@ export function CourseCurriculum({
                   onClick={() => onSelectTopic(t._id)}
                   className={cn(
                     "flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm transition",
-                    active ? "bg-brand-50 text-brand-800" : "text-ink-600 hover:bg-ink-50"
+                    active ? "bg-teal-50 text-teal-800" : "text-ink-600 hover:bg-ink-50"
                   )}
                 >
                   {t.videoUrl ? (
-                    <PlayCircle className={cn("h-4 w-4 shrink-0", active ? "text-brand-600" : "text-ink-300")} />
+                    <PlayCircle className={cn("h-4 w-4 shrink-0", active ? "text-teal-600" : "text-ink-300")} />
                   ) : (
-                    <FileText className={cn("h-4 w-4 shrink-0", active ? "text-brand-600" : "text-ink-300")} />
+                    <FileText className={cn("h-4 w-4 shrink-0", active ? "text-teal-600" : "text-ink-300")} />
                   )}
                   <span className="line-clamp-1 flex-1">{t.title}</span>
                   {t.timeDurationSec ? <span className="shrink-0 text-xs text-ink-400">{fmtDuration(t.timeDurationSec)}</span> : null}
@@ -137,7 +137,7 @@ export function CourseCurriculum({
             {m.test?.isPublished && (
               <button
                 onClick={() => onSelectTest(m.test!._id)}
-                className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm text-grape-700 hover:bg-grape-50/60"
+                className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm text-amber-700 hover:bg-amber-50/60"
               >
                 <ClipboardCheck className="h-4 w-4 shrink-0" />
                 <span className="flex-1">Module test</span>
@@ -181,14 +181,14 @@ export function CourseCurriculum({
                 return (
                   <div key={st.levelKey} className="border-b border-ink-200">
                     {/* Section header */}
-                    <div className={cn("px-5 py-3", st.locked ? "bg-ink-50" : "bg-brand-50/40")}>
+                    <div className={cn("px-5 py-3", st.locked ? "bg-ink-50" : "bg-teal-50/40")}>
                       <h3 className="flex items-center gap-2 font-bold text-ink-900">
                         {st.locked ? (
                           <Lock className="h-4 w-4 shrink-0 text-ink-400" />
                         ) : st.certificateEarned ? (
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-pitch-500" />
                         ) : (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-teal-500" />
                         )}
                         {st.label}
                       </h3>
@@ -212,7 +212,7 @@ export function CourseCurriculum({
                         {sec?.finalTest?.isPublished && (
                           <button
                             onClick={() => onSelectTest(sec.finalTest!._id)}
-                            className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm text-grape-700 hover:bg-grape-50/60"
+                            className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm text-amber-700 hover:bg-amber-50/60"
                           >
                             <Trophy className="h-4 w-4 shrink-0" />
                             <span className="flex-1">Section final test</span>
@@ -237,7 +237,7 @@ export function CourseCurriculum({
                                   <ShieldCheck
                                     className={cn(
                                       "h-4 w-4 shrink-0",
-                                      st.physicalAssessment.status === "cert_approved" ? "text-pitch-600" : "text-sun-500"
+                                      st.physicalAssessment.status === "cert_approved" ? "text-pitch-600" : "text-amber-500"
                                     )}
                                   />
                                   <span>{physicalStatusLabel(st.physicalAssessment)}</span>
@@ -270,7 +270,7 @@ export function CourseCurriculum({
                           {st.certificateEarned ? (
                             <button
                               onClick={() => onGetCertificate?.(st.levelKey, st.label)}
-                              className="flex w-full items-center justify-center gap-2 rounded-lg bg-sun-400/20 px-3 py-2 text-sm font-semibold text-sun-500 hover:bg-sun-400/30"
+                              className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400/20 px-3 py-2 text-sm font-semibold text-amber-500 hover:bg-amber-400/30"
                             >
                               <Award className="h-4 w-4" /> Download {st.label} certificate
                             </button>
@@ -292,9 +292,9 @@ export function CourseCurriculum({
               {course.finalTest?.isPublished && (
                 <button
                   onClick={() => onSelectTest(course.finalTest!._id)}
-                  className="flex w-full items-center gap-3 bg-gradient-to-r from-brand-50 to-grape-50 px-5 py-4 text-left text-sm font-semibold text-brand-800 hover:from-brand-100 hover:to-grape-100"
+                  className="flex w-full items-center gap-3 bg-gradient-to-r from-teal-50 to-amber-50 px-5 py-4 text-left text-sm font-semibold text-teal-800 hover:from-teal-100 hover:to-amber-100"
                 >
-                  <Trophy className="h-5 w-5 shrink-0 text-grape-600" />
+                  <Trophy className="h-5 w-5 shrink-0 text-amber-600" />
                   <span className="flex-1">Final course test</span>
                   {passedSet.has(course.finalTest._id) && (
                     <span className="flex h-5 w-5 items-center justify-center rounded bg-pitch-500">

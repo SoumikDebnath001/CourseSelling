@@ -107,17 +107,17 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
               <div className="flex items-center justify-between">
                 <div className="text-2xl font-extrabold text-pitch-700">{formatKES(course.price)}</div>
                 {hasLevelBadge && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sun-100 px-2.5 py-1 text-xs font-bold text-sun-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
                     <Layers className="h-3.5 w-3.5" /> {requiredLevel}
                   </span>
                 )}
               </div>
               {(course.points ?? 0) > 0 && (
-                <p className="mt-1 text-sm font-semibold text-brand-600">Earn +{course.points} points on completion</p>
+                <p className="mt-1 text-sm font-semibold text-teal-600">Earn +{course.points} points on completion</p>
               )}
               {locked ? (
-                <div className="mt-4 rounded-xl border border-sun-200 bg-sun-50 p-4 text-center">
-                  <Lock className="mx-auto h-6 w-6 text-sun-600" />
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+                  <Lock className="mx-auto h-6 w-6 text-amber-600" />
                   <p className="mt-2 text-sm font-bold text-ink-900">Locked — {requiredLevel} required</p>
                   <p className="mt-1 text-xs text-ink-500">
                     {catProgress

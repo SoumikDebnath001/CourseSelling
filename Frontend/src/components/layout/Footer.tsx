@@ -68,19 +68,19 @@ export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-ink-900 text-white">
       {/* gradient hairline along the very top */}
-      <div aria-hidden className="h-[3px] w-full bg-gradient-to-r from-brand-500 via-grape-500 to-brand-500" />
+      <div aria-hidden className="h-[3px] w-full bg-gradient-to-r from-teal-500 via-amber-500 to-teal-500" />
 
       {/* soft brand glows + violet tint */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-brand-900/40" />
-        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-brand-600/20 blur-3xl" />
-        <div className="absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-grape-600/20 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-teal-900/40" />
+        <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-teal-600/20 blur-3xl" />
+        <div className="absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-amber-600/20 blur-3xl" />
       </div>
 
       <div ref={ref} className="relative mx-auto max-w-3xl px-6 py-14">
         <div className="flex flex-col items-center text-center">
           {/* ── Logo (centered) ── */}
-          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-[1.4rem] bg-gradient-to-br from-brand-500 to-grape-500 p-[3px] shadow-lg shadow-brand-600/30">
+          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-[1.4rem] bg-gradient-to-br from-teal-500 to-amber-500 p-[3px] shadow-lg shadow-teal-600/30">
             <span className="grid h-full w-full place-items-center rounded-[1.2rem] bg-ink-900">
               <Image src="/brand/logo.png" alt={platformName} width={56} height={56} className="h-12 w-12 object-contain" />
             </span>
@@ -94,7 +94,7 @@ export function Footer() {
             {place && (
               <li className="flex items-center gap-2.5">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/[0.06] ring-1 ring-white/10">
-                  <MapPin className="h-3.5 w-3.5 text-brand-300" />
+                  <MapPin className="h-3.5 w-3.5 text-teal-300" />
                 </span>
                 <span>{place}</span>
               </li>
@@ -102,7 +102,7 @@ export function Footer() {
             {contactPhone && (
               <li className="flex items-center gap-2.5">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/[0.06] ring-1 ring-white/10">
-                  <Phone className="h-3.5 w-3.5 text-brand-300" />
+                  <Phone className="h-3.5 w-3.5 text-teal-300" />
                 </span>
                 <a href={`tel:${contactPhone}`} className="transition-colors hover:text-white">
                   {contactPhone}
@@ -112,7 +112,7 @@ export function Footer() {
             {email && (
               <li className="flex items-center gap-2.5">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/[0.06] ring-1 ring-white/10">
-                  <Mail className="h-3.5 w-3.5 text-brand-300" />
+                  <Mail className="h-3.5 w-3.5 text-teal-300" />
                 </span>
                 <a href={`mailto:${email}`} className="break-all transition-colors hover:text-white">
                   {email}
@@ -136,7 +136,7 @@ export function Footer() {
                     rel="noopener noreferrer"
                     aria-label={s.label}
                     title={s.label}
-                    className="group relative grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.04] text-white/85 transition-all duration-300 hover:border-transparent hover:bg-gradient-to-br hover:from-brand-500 hover:to-grape-500 hover:text-white hover:shadow-lg hover:shadow-brand-500/30"
+                    className="group relative grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.04] text-white/85 transition-all duration-300 hover:border-transparent hover:bg-gradient-to-br hover:from-teal-500 hover:to-amber-500 hover:text-white hover:shadow-lg hover:shadow-teal-500/30"
                   >
                     <s.Icon className="h-[18px] w-[18px]" aria-hidden />
                   </a>

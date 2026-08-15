@@ -40,7 +40,7 @@ function VerifyInner({ id }: { id: string }) {
   if (isError || !data) {
     return (
       <div className="card mt-5 p-8 text-center">
-        <ShieldX className="mx-auto h-8 w-8 text-ball-500" />
+        <ShieldX className="mx-auto h-8 w-8 text-rose-gold-500" />
         <p className="mt-2 text-ink-600">This verification link is invalid or has expired.</p>
       </div>
     );
@@ -68,7 +68,7 @@ function VerifyInner({ id }: { id: string }) {
           <Award className="h-4 w-4" /> Passed — certificate unlocked.
         </p>
       ) : data.status === "failed" ? (
-        <p className="flex items-center gap-2 rounded-lg bg-ball-50 p-3 text-sm font-semibold text-ball-700">
+        <p className="flex items-center gap-2 rounded-lg bg-rose-gold-50 p-3 text-sm font-semibold text-rose-gold-700">
           <XCircle className="h-4 w-4" /> Marked as not passed. The student can request another attempt from their course page.
         </p>
       ) : data.status === "pending" ? (

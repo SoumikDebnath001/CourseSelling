@@ -47,7 +47,7 @@ export default function VerifyCertificatePage({ params }: { params: Promise<{ ce
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-14 sm:py-20">
       <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-grape-600 text-white shadow-lg">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-amber-600 text-white shadow-lg">
           <Award className="h-7 w-7" />
         </div>
         <h1 className="mt-4 text-2xl font-bold text-ink-900">Certificate Verification</h1>
@@ -57,8 +57,8 @@ export default function VerifyCertificatePage({ params }: { params: Promise<{ ce
       <div className="card mt-8 p-6">
         {!validFormat || isError ? (
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ball-50">
-              <ShieldX className="h-6 w-6 text-ball-600" />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-gold-50">
+              <ShieldX className="h-6 w-6 text-rose-gold-600" />
             </div>
             <h2 className="mt-3 text-lg font-bold text-ink-900">Certificate not found</h2>
             <p className="mt-1 text-sm text-ink-500">

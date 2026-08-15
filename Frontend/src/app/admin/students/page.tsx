@@ -101,7 +101,7 @@ export default function AdminStudentsPage() {
 
 function TypeBadge({ isMember }: { isMember: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", isMember ? "bg-pitch-100 text-pitch-700" : "bg-brand-100 text-brand-700")}>
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", isMember ? "bg-pitch-100 text-pitch-700" : "bg-teal-100 text-teal-700")}>
       {isMember ? <BadgeCheck className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
       {isMember ? "Member" : "Online"}
     </span>
@@ -366,7 +366,7 @@ function OverridePanel({ userId }: { userId: string }) {
                 <span className="text-ink-700">{g.course?.courseName ?? "—"}</span>
                 <button
                   onClick={() => g.course && revoke.mutate({ userId, courseId: g.course._id })}
-                  className="text-ink-400 hover:text-ball-600"
+                  className="text-ink-400 hover:text-rose-gold-600"
                   title="Revoke"
                 >
                   <X className="h-4 w-4" />

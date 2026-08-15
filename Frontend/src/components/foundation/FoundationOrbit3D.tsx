@@ -217,7 +217,7 @@ export default function FoundationOrbit3D({
           ready ? "opacity-0" : "opacity-100"
         }`}
       >
-        <div className="flex h-40 w-40 items-center justify-center rounded-full bg-white shadow-2xl ring-[8px] ring-brand-50 sm:h-52 sm:w-52">
+        <div className="flex h-40 w-40 items-center justify-center rounded-full bg-white shadow-2xl ring-[8px] ring-teal-50 sm:h-52 sm:w-52">
           <Image
             src={logoSrc}
             alt="Foundation"

@@ -129,7 +129,7 @@ function DashboardInner() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-ink-200 bg-white">
           <span className="font-extrabold text-ink-900">Dashboard Menu</span>
           <button 
-            className="p-2 text-ink-500 hover:text-brand-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
+            className="p-2 text-ink-500 hover:text-teal-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
             onClick={() => setIsSidebarOpen(false)}
             aria-label="Close menu"
           >
@@ -163,7 +163,7 @@ function EmptyCourses({ view }: { view: DashView }) {
         <>
           <BookOpen className="mx-auto h-8 w-8 text-ink-300" />
           <p className="mt-2 text-ink-500">You haven&apos;t enrolled in any courses yet.</p>
-          <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-brand-600 to-grape-600 px-4 py-2 text-sm font-semibold text-white">
+          <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-teal-600 to-amber-600 px-4 py-2 text-sm font-semibold text-white">
             Explore courses
           </Link>
         </>
@@ -186,16 +186,16 @@ function ProfilePanel({ total, completed, inProgress }: { total: number; complet
     <div className="mt-5 space-y-5">
       {/* Identity card */}
       <div className="card overflow-hidden">
-        <div className="h-20 bg-gradient-to-r from-brand-600 to-grape-600" />
+        <div className="h-20 bg-gradient-to-r from-teal-600 to-amber-600" />
         <div className="px-6 pb-6">
-          <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-brand-100 text-3xl font-extrabold text-brand-700">
+          <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-teal-100 text-3xl font-extrabold text-teal-700">
             {account?.name?.charAt(0).toUpperCase() ?? "U"}
           </div>
           <h2 className="mt-3 text-xl font-bold text-ink-900">{account?.name}</h2>
           <span
             className={cn(
               "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-              isMember ? "bg-pitch-100 text-pitch-700" : "bg-brand-100 text-brand-700"
+              isMember ? "bg-pitch-100 text-pitch-700" : "bg-teal-100 text-teal-700"
             )}
           >
             {isMember ? <BadgeCheck className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
@@ -242,7 +242,7 @@ function PurchaseHistoryPanel() {
       <div className="card mt-5 p-10 text-center">
         <Receipt className="mx-auto h-8 w-8 text-ink-300" />
         <p className="mt-2 text-ink-500">No purchases yet — your transactions will appear here.</p>
-        <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-brand-600 to-grape-600 px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-teal-600 to-amber-600 px-4 py-2 text-sm font-semibold text-white">
           Explore courses
         </Link>
       </div>
@@ -457,7 +457,7 @@ function ProgressAchievement() {
       <div className="grid grid-cols-3 gap-3">
         {totals.map((t) => (
           <div key={t.label} className="card flex flex-col items-center p-4 text-center">
-            <t.icon className="h-5 w-5 text-brand-600" />
+            <t.icon className="h-5 w-5 text-teal-600" />
             <div className="mt-1 text-2xl font-extrabold text-ink-900">{t.value}</div>
             <div className="text-[11px] font-medium text-ink-500">{t.label}</div>
           </div>
@@ -525,7 +525,7 @@ function CategoryCarousel({ categories }: { categories: CategoryProgress[] }) {
                 key={i}
                 aria-label={`Go to card ${i + 1}`}
                 onClick={() => setIdx(i)}
-                className={cn("h-1.5 rounded-full transition-all", i === idx ? "w-5 bg-brand-600" : "w-1.5 bg-ink-200")}
+                className={cn("h-1.5 rounded-full transition-all", i === idx ? "w-5 bg-teal-600" : "w-1.5 bg-ink-200")}
               />
             ))}
           </div>
@@ -538,7 +538,7 @@ function CategoryCarousel({ categories }: { categories: CategoryProgress[] }) {
 function CategoryProgressCard({ c }: { c: CategoryProgress }) {
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center justify-between bg-gradient-to-r from-brand-600 to-grape-600 px-5 py-4 text-white">
+      <div className="flex items-center justify-between bg-gradient-to-r from-teal-600 to-amber-600 px-5 py-4 text-white">
         <div className="flex items-center gap-2">
           <Layers className="h-5 w-5" />
           <div>
@@ -559,7 +559,7 @@ function CategoryProgressCard({ c }: { c: CategoryProgress }) {
           )}
         </div>
         <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-ink-100">
-          <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-grape-500 transition-all" style={{ width: `${c.percent}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-amber-500 transition-all" style={{ width: `${c.percent}%` }} />
         </div>
         {c.nextLevel ? (
           <p className="mt-2 text-xs text-ink-400">
@@ -612,7 +612,7 @@ function CertificationsPanel() {
       <div className="card mt-5 p-10 text-center">
         <Award className="mx-auto h-8 w-8 text-ink-300" />
         <p className="mt-2 text-ink-500">No certificates yet — fully complete a course (all lessons + final test) to earn one.</p>
-        <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-brand-600 to-grape-600 px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/catalog" className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-teal-600 to-amber-600 px-4 py-2 text-sm font-semibold text-white">
           Explore courses
         </Link>
       </div>
@@ -655,9 +655,9 @@ function CertificationsPanel() {
               <h3 className="line-clamp-1 font-semibold text-ink-900">{c.courseName}</h3>
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
                 {c.categoryName && (
-                  <span className="rounded-full bg-brand-100 px-2 py-0.5 font-bold text-brand-700">{c.categoryName}</span>
+                  <span className="rounded-full bg-teal-100 px-2 py-0.5 font-bold text-teal-700">{c.categoryName}</span>
                 )}
-                <span className="inline-flex items-center gap-1 rounded-full bg-sun-100 px-2 py-0.5 font-bold text-sun-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-700">
                   <Layers className="h-3 w-3" /> {levelName(c.level)}
                 </span>
                 <span className="text-ink-400">{formatDate(c.issuedAt)}</span>
@@ -707,11 +707,11 @@ function DashCourseCard({ data }: { data: EnrolledCourse }) {
       <div className="p-4">
         <h3 className="line-clamp-1 font-semibold text-ink-900">{course.courseName}</h3>
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-ink-100">
-          <div className="h-full bg-gradient-to-r from-brand-500 to-grape-500" style={{ width: `${percent}%` }} />
+          <div className="h-full bg-gradient-to-r from-teal-500 to-amber-500" style={{ width: `${percent}%` }} />
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-ink-400">
           <span>{completedTopics}/{totalTopics} topics</span>
-          <span className="flex items-center gap-1 font-semibold text-brand-700">
+          <span className="flex items-center gap-1 font-semibold text-teal-700">
             {percent >= 100 ? "Review" : "Continue"} <ArrowRight className="h-3 w-3" />
           </span>
         </div>

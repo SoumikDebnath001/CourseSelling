@@ -75,7 +75,7 @@ function AnalyticsSection() {
       <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {headline.map(({ label, value, icon: Icon }) => (
           <div key={label} className="card p-4">
-            <Icon className="h-5 w-5 text-grape-600" />
+            <Icon className="h-5 w-5 text-amber-600" />
             <p className="mt-2 text-2xl font-extrabold text-ink-900">{value}</p>
             <p className="text-xs text-ink-400">{label}</p>
           </div>

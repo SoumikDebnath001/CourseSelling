@@ -112,11 +112,11 @@ export function TestRunner({ testId, onClose }: { testId: string; onClose: () =>
 function ResultView({ result }: { result: SubmitResult }) {
   return (
     <div className="text-center">
-      <div className={cn("mx-auto flex h-16 w-16 items-center justify-center rounded-full", result.passed ? "bg-pitch-100" : "bg-ball-50")}>
-        {result.passed ? <Trophy className="h-8 w-8 text-pitch-600" /> : <XCircle className="h-8 w-8 text-ball-600" />}
+      <div className={cn("mx-auto flex h-16 w-16 items-center justify-center rounded-full", result.passed ? "bg-pitch-100" : "bg-rose-gold-50")}>
+        {result.passed ? <Trophy className="h-8 w-8 text-pitch-600" /> : <XCircle className="h-8 w-8 text-rose-gold-600" />}
       </div>
       <h3 className="mt-3 text-2xl font-extrabold text-ink-900">{result.scorePct}%</h3>
-      <p className={cn("font-semibold", result.passed ? "text-pitch-700" : "text-ball-600")}>
+      <p className={cn("font-semibold", result.passed ? "text-pitch-700" : "text-rose-gold-600")}>
         {result.passed ? "Passed 🎉" : `Need ${result.passingScorePct}% to pass`}
       </p>
 
@@ -126,7 +126,7 @@ function ResultView({ result }: { result: SubmitResult }) {
             {r.correct ? (
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-pitch-600" />
             ) : (
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-ball-600" />
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-gold-600" />
             )}
             <div>
               <span className="font-medium text-ink-700">

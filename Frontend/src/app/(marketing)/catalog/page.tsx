@@ -66,7 +66,7 @@ export default function CatalogPage() {
           <SlidersHorizontal className="h-4 w-4" />
           {showFilters ? "Hide Filters" : "Show Filters"}
           {activeFilters > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-100 text-[10px] font-bold text-teal-700">
               {activeFilters}
             </span>
           )}
@@ -88,7 +88,7 @@ export default function CatalogPage() {
                 <SlidersHorizontal className="h-4 w-4" /> Filters
               </h2>
               {activeFilters > 0 && (
-                <button onClick={clearAll} className="flex items-center gap-1 text-xs font-medium text-ink-400 hover:text-ball-600">
+                <button onClick={clearAll} className="flex items-center gap-1 text-xs font-medium text-ink-400 hover:text-rose-gold-600">
                   <X className="h-3 w-3" /> Clear ({activeFilters})
                 </button>
               )}

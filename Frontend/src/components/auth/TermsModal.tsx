@@ -76,8 +76,8 @@ export function TermsModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-ink-100 p-5">
           <div className="flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
-              <ScrollText className="h-5 w-5 text-brand-600" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-50">
+              <ScrollText className="h-5 w-5 text-teal-600" />
             </span>
             <div>
               <h3 className="text-lg font-bold text-ink-900">Terms &amp; Conditions</h3>
@@ -99,7 +99,7 @@ export function TermsModal({
               type="checkbox"
               checked={ticked}
               onChange={(e) => setTicked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-ink-300 text-brand-600"
+              className="mt-0.5 h-4 w-4 rounded border-ink-300 text-teal-600"
             />
             <span className="text-sm font-medium text-ink-700">
               I have read and understood the Terms &amp; Conditions, and I agree to them.
@@ -109,7 +109,7 @@ export function TermsModal({
             <Button
               onClick={onAgree}
               disabled={!ticked}
-              className="flex-1 rounded-xl bg-gradient-to-r from-brand-600 to-grape-600 hover:from-brand-700 hover:to-grape-700"
+              className="flex-1 rounded-xl bg-gradient-to-r from-teal-600 to-amber-600 hover:from-teal-700 hover:to-amber-700"
             >
               I Agree
             </Button>

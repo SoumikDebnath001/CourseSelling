@@ -71,7 +71,7 @@ function CallbackInner() {
       <CallbackShell>
         <XCircle className="mx-auto h-10 w-10 text-red-500" />
         <p className="mt-3 font-bold text-ink-900">Missing payment reference</p>
-        <Link href="/courses" className="mt-4 inline-block text-sm font-semibold text-brand-600">Browse courses</Link>
+        <Link href="/courses" className="mt-4 inline-block text-sm font-semibold text-teal-600">Browse courses</Link>
       </CallbackShell>
     );
   }
@@ -118,7 +118,7 @@ function CallbackInner() {
   if (payment.status === "pending") {
     return (
       <CallbackShell>
-        <Clock className="mx-auto h-10 w-10 text-sun-500" />
+        <Clock className="mx-auto h-10 w-10 text-amber-500" />
         <p className="mt-3 font-bold text-ink-900">Payment still processing</p>
         <p className="mt-1 text-sm text-ink-600">
           We&apos;ll grant access automatically as soon as Pesapal confirms it. Check My Courses shortly.

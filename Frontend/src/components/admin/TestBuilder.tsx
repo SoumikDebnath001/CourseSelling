@@ -312,7 +312,7 @@ export function TestBuilder({ courseId, scope, moduleId, section, existing, savi
                 <p className="text-xs text-ink-500">
                   Pool by marks: {Object.entries(tierSummary).length === 0 ? "no questions yet" : Object.entries(tierSummary).map(([pts, n]) => `${pts}-mark: ${n}`).join(", ")}
                 </p>
-                <p className={comboFeasible ? "text-xs font-medium text-pitch-700" : "text-xs font-medium text-ball-600"}>
+                <p className={comboFeasible ? "text-xs font-medium text-pitch-700" : "text-xs font-medium text-rose-gold-600"}>
                   {comboFeasible ? "✓ A valid combination of questions can meet these targets." : "✗ No combination of the current questions can meet these targets — add more questions or adjust the targets."}
                 </p>
               </div>
@@ -394,7 +394,7 @@ export function TestBuilder({ courseId, scope, moduleId, section, existing, savi
                         setQuestions((qs) => qs.filter((_, idx) => idx !== i));
                         setOpenIndex((cur) => (cur === null ? null : cur === i ? null : cur > i ? cur - 1 : cur));
                       }}
-                      className="shrink-0 text-ink-400 hover:text-ball-600"
+                      className="shrink-0 text-ink-400 hover:text-rose-gold-600"
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -464,7 +464,7 @@ export function TestBuilder({ courseId, scope, moduleId, section, existing, savi
                               onChange={(e) => update(i, { options: q.options.map((o, idx) => (idx === oi ? e.target.value : o)) })}
                             />
                             {q.options.length > 2 && (
-                              <button onClick={() => update(i, { options: q.options.filter((_, idx) => idx !== oi) })} className="text-ink-300 hover:text-ball-600">
+                              <button onClick={() => update(i, { options: q.options.filter((_, idx) => idx !== oi) })} className="text-ink-300 hover:text-rose-gold-600">
                                 <X className="h-4 w-4" />
                               </button>
                             )}

@@ -7,7 +7,7 @@ import { formatKES } from "@/lib/currency";
 
 function LevelBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-sun-100 px-2 py-0.5 text-[11px] font-bold text-sun-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
       <Layers className="h-3 w-3" /> {label}
     </span>
   );
@@ -54,7 +54,7 @@ export function CourseCard({
         <span className="absolute left-2 top-2 flex gap-1">
           {levelLabel && <LevelBadge label={levelLabel} />}
           {course.courseType === "miscellaneous" && (
-            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700">Special</span>
+            <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-700">Special</span>
           )}
         </span>
       </div>
@@ -64,7 +64,7 @@ export function CourseCard({
         <div className="mt-3 flex items-center justify-between">
           <span className="font-bold text-pitch-700">{formatKES(course.price)}</span>
           <span className="flex items-center gap-3 text-xs text-ink-400">
-            {(course.points ?? 0) > 0 && <span className="font-semibold text-brand-600">+{course.points} pts</span>}
+            {(course.points ?? 0) > 0 && <span className="font-semibold text-teal-600">+{course.points} pts</span>}
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" /> {course.studentsEnrolledCount ?? 0}
             </span>

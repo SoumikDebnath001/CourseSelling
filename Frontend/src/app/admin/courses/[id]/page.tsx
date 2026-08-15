@@ -116,7 +116,7 @@ function Builder({ courseId }: { courseId: string }) {
 
           <div className="card mt-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 shrink-0 text-ball-600" />
+              <Trophy className="h-5 w-5 shrink-0 text-rose-gold-600" />
               <div>
                 <p className="font-semibold text-ink-900">Final course test</p>
                 <p className="text-xs text-ink-400">{course.finalTest ? `${course.finalTest.questions?.length ?? 0} questions` : "Optional — covers the whole course"}</p>
@@ -127,7 +127,7 @@ function Builder({ courseId }: { courseId: string }) {
                 {course.finalTest ? "Edit" : "Add final test"}
               </Button>
               {course.finalTest && (
-                <button onClick={() => { if (confirm("Delete final test?")) actions.deleteTest.mutate(course.finalTest!._id); }} className="rounded-lg p-2 text-ink-400 hover:text-ball-600">
+                <button onClick={() => { if (confirm("Delete final test?")) actions.deleteTest.mutate(course.finalTest!._id); }} className="rounded-lg p-2 text-ink-400 hover:text-rose-gold-600">
                   <Trash2 className="h-4 w-4" />
                 </button>
               )}
@@ -199,7 +199,7 @@ function SectionBlock({
     <section className="rounded-2xl border border-ink-200 bg-ink-50/40 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="h-5 w-5 shrink-0 text-brand-600" />
+          <Layers className="h-5 w-5 shrink-0 text-teal-600" />
           <div>
             <h2 className="text-lg font-bold text-ink-900">{label} modules</h2>
             <p className="text-xs text-ink-400">{modules.length} module{modules.length === 1 ? "" : "s"} · earns the {label} certificate</p>
@@ -231,7 +231,7 @@ function SectionBlock({
 
       <div className="mt-4 flex flex-col gap-3 rounded-lg border border-ink-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 shrink-0 text-ball-600" />
+          <Trophy className="h-5 w-5 shrink-0 text-rose-gold-600" />
           <div>
             <p className="font-semibold text-ink-900">Section final test</p>
             <p className="text-xs text-ink-400">{section.finalTest ? `${section.finalTest.questions?.length ?? 0} questions` : "Optional — gates this section's certificate"}</p>
@@ -240,7 +240,7 @@ function SectionBlock({
         <div className="flex shrink-0 gap-2">
           <Button variant="ghost" onClick={onEditSectionTest}>{section.finalTest ? "Edit" : "Add final test"}</Button>
           {section.finalTest && (
-            <button onClick={onDeleteSectionTest} className="rounded-lg p-2 text-ink-400 hover:text-ball-600"><Trash2 className="h-4 w-4" /></button>
+            <button onClick={onDeleteSectionTest} className="rounded-lg p-2 text-ink-400 hover:text-rose-gold-600"><Trash2 className="h-4 w-4" /></button>
           )}
         </div>
       </div>
@@ -277,13 +277,13 @@ function ModuleCard({
         <h3 className="font-bold text-ink-900">{module.moduleName}</h3>
         <div className="flex flex-wrap items-center gap-1">
           <PointsInline label="Module pts" value={module.points ?? 0} onSave={onSaveModulePoints} />
-          <button onClick={onEditTest} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-ball-600 hover:bg-ball-50">
+          <button onClick={onEditTest} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-rose-gold-600 hover:bg-rose-gold-50">
             <ClipboardCheck className="h-3.5 w-3.5" /> {module.test ? "Edit test" : "Add test"}
           </button>
           {module.test && (
-            <button onClick={onDeleteTest} className="rounded-lg p-1.5 text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
+            <button onClick={onDeleteTest} className="rounded-lg p-1.5 text-ink-400 hover:text-rose-gold-600"><Trash2 className="h-3.5 w-3.5" /></button>
           )}
-          <button onClick={onDeleteModule} className="rounded-lg p-1.5 text-ink-400 hover:text-ball-600"><Trash2 className="h-4 w-4" /></button>
+          <button onClick={onDeleteModule} className="rounded-lg p-1.5 text-ink-400 hover:text-rose-gold-600"><Trash2 className="h-4 w-4" /></button>
         </div>
       </div>
 
@@ -298,7 +298,7 @@ function ModuleCard({
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   <PointsInline label="pts" value={t.points ?? 0} onSave={(p) => onSaveTopicPoints(t._id, p)} />
-                  <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-ball-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => onDeleteTopic(t._id)} className="text-ink-400 hover:text-rose-gold-600"><Trash2 className="h-3.5 w-3.5" /></button>
                 </span>
               </div>
               {/* What's uploaded on this topic — format + size for the video and each resource. */}
@@ -408,7 +408,7 @@ function AddTopicForm({ moduleId, loading, onSubmit, onCancel }: { moduleId: str
           </div>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
             <div
-              className={cn("h-full rounded-full bg-brand-500 transition-all", currentUpload.status === "processing" && "animate-pulse")}
+              className={cn("h-full rounded-full bg-teal-500 transition-all", currentUpload.status === "processing" && "animate-pulse")}
               style={{ width: `${currentUpload.progress}%` }}
             />
           </div>
@@ -456,7 +456,7 @@ function CourseSettingsCard({ course }: { course: Course }) {
   return (
     <div className="card mt-6 p-4">
       <div className="flex items-center gap-2">
-        <Layers className="h-5 w-5 text-brand-600" />
+        <Layers className="h-5 w-5 text-teal-600" />
         <div>
           <p className="font-semibold text-ink-900">Type, level &amp; points</p>
           <p className="text-xs text-ink-400">Where this course sits in the progression and the points it awards on completion.</p>
@@ -528,7 +528,7 @@ function BulkPointsCard({ onApply, applying }: { onApply: (v: { coursePoints?: n
   return (
     <div className="card mt-4 p-4">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-grape-600" />
+        <Sparkles className="h-5 w-5 text-amber-600" />
         <div>
           <p className="font-semibold text-ink-900">Apply points in bulk</p>
           <p className="text-xs text-ink-400">Stamp the same value across all modules / topics. Leave a field blank to skip it. You can still fine-tune individual values above.</p>
@@ -613,7 +613,7 @@ function CertificateCard({ course }: { course: Course }) {
   return (
     <div className="card mt-6 p-4">
       <div className="flex items-center gap-2">
-        <Award className="h-5 w-5 text-grape-600" />
+        <Award className="h-5 w-5 text-amber-600" />
         <div>
           <p className="font-semibold text-ink-900">Completion certificate</p>
           <p className="text-xs text-ink-400">
@@ -641,7 +641,7 @@ function CertificateCard({ course }: { course: Course }) {
               onClick={() => setOrientation(o)}
               className={
                 orientation === o
-                  ? "bg-grape-600 px-3 py-2 text-sm font-semibold text-white"
+                  ? "bg-amber-600 px-3 py-2 text-sm font-semibold text-white"
                   : "bg-white px-3 py-2 text-sm font-medium text-ink-600 hover:bg-ink-50"
               }
             >
@@ -663,7 +663,7 @@ function CertificateCard({ course }: { course: Course }) {
         <p className="text-sm font-semibold text-ink-800">Signatures on this certificate</p>
         <p className="text-xs text-ink-400">
           Pick up to three signatories (managed in{" "}
-          <a href="/admin/certificates" className="font-semibold text-brand-600 hover:underline">Certificates</a>).
+          <a href="/admin/certificates" className="font-semibold text-teal-600 hover:underline">Certificates</a>).
           With none selected, the first signatory signs.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -674,7 +674,7 @@ function CertificateCard({ course }: { course: Course }) {
                 key={s._id}
                 className={
                   "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition " +
-                  (checked ? "border-grape-400 bg-grape-50 text-grape-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
+                  (checked ? "border-amber-400 bg-amber-50 text-amber-800" : "border-ink-200 text-ink-600 hover:bg-ink-50")
                 }
               >
                 <input

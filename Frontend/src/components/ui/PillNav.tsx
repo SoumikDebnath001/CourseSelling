@@ -16,6 +16,7 @@ export interface PillNavProps {
   logoAlt?: string;
   /** Optional brand name rendered beside the logo (e.g. the dynamic platform name). */
   logoText?: string;
+  logoTextColor?: string;
   items: PillNavItem[];
   activeHref?: string;
   className?: string;
@@ -32,6 +33,7 @@ const PillNav = ({
   logo,
   logoAlt = 'Logo',
   logoText,
+  logoTextColor,
   items,
   activeHref,
   className = '',
@@ -241,7 +243,7 @@ const PillNav = ({
           </a>
         )}
 
-        {logoText && <span className="pill-logo-text">{logoText}</span>}
+        {logoText && <span className="pill-logo-text" style={{ color: logoTextColor }}>{logoText}</span>}
 
         <div className="pill-nav-items desktop-only" ref={navItemsRef}>
           <ul className="pill-list" role="menubar">

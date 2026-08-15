@@ -88,7 +88,7 @@ function LearnInner({ courseId }: { courseId: string }) {
       <LearnTopbar />
 
       {/* Course header bar */}
-      <div className="bg-gradient-to-r from-brand-600 to-grape-600 text-white">
+      <div className="bg-gradient-to-r from-teal-600 to-amber-600 text-white">
         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold hover:opacity-90">
             <ChevronLeft className="h-5 w-5" />
@@ -120,7 +120,7 @@ function LearnInner({ courseId }: { courseId: string }) {
                 title="Your level certificates are in the course content panel"
                 className={cn(
                   "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition",
-                  earnedCertCount > 0 ? "cert-glow bg-sun-400 text-ink-900 hover:bg-sun-300" : "bg-white/15 text-white/80 hover:bg-white/25"
+                  earnedCertCount > 0 ? "cert-glow bg-amber-400 text-ink-900 hover:bg-amber-300" : "bg-white/15 text-white/80 hover:bg-white/25"
                 )}
               >
                 <Award className="h-4 w-4" /> {earnedCertCount}/{sectionStatus.length} Certificates
@@ -158,7 +158,7 @@ function LearnInner({ courseId }: { courseId: string }) {
                 className={cn(
                   "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition",
                   courseCertEarned
-                    ? "cert-glow bg-sun-400 text-ink-900 hover:bg-sun-300"
+                    ? "cert-glow bg-amber-400 text-ink-900 hover:bg-amber-300"
                     : "cursor-not-allowed bg-white/15 text-white/60"
                 )}
               >
@@ -176,7 +176,7 @@ function LearnInner({ courseId }: { courseId: string }) {
         </span>
         <button
           onClick={() => setSidebarOpen(true)}
-          className="flex shrink-0 items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-700"
         >
           <ListChecks className="h-4 w-4" /> Course content
         </button>

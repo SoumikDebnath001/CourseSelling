@@ -40,19 +40,19 @@ export default function ContactPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
         <div>
           <input className="input" placeholder="Your name" {...register("name")} />
-          {errors.name && <p className="mt-1 text-xs text-ball-600">{errors.name.message}</p>}
+          {errors.name && <p className="mt-1 text-xs text-rose-gold-600">{errors.name.message}</p>}
         </div>
         <div>
           <input className="input" placeholder="Email" {...register("email")} />
-          {errors.email && <p className="mt-1 text-xs text-ball-600">{errors.email.message}</p>}
+          {errors.email && <p className="mt-1 text-xs text-rose-gold-600">{errors.email.message}</p>}
         </div>
         <div>
           <input className="input" placeholder="Subject" {...register("subject")} />
-          {errors.subject && <p className="mt-1 text-xs text-ball-600">{errors.subject.message}</p>}
+          {errors.subject && <p className="mt-1 text-xs text-rose-gold-600">{errors.subject.message}</p>}
         </div>
         <div>
           <textarea className="input min-h-32" placeholder="Your message" {...register("message")} />
-          {errors.message && <p className="mt-1 text-xs text-ball-600">{errors.message.message}</p>}
+          {errors.message && <p className="mt-1 text-xs text-rose-gold-600">{errors.message.message}</p>}
         </div>
         <Button type="submit" loading={isSubmitting} className="w-full py-2.5">
           Send message

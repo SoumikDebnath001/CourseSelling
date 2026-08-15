@@ -32,7 +32,7 @@ export function CommentItem({ comment, actions, isReply }: { comment: CommentNod
         </div>
         <span className="text-sm font-semibold text-ink-900">{comment.authorName}</span>
         {comment.authorModel === "Admin" && (
-          <span className="flex items-center gap-0.5 rounded bg-ball-50 px-1.5 py-0.5 text-[10px] font-semibold text-ball-600">
+          <span className="flex items-center gap-0.5 rounded bg-rose-gold-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-gold-600">
             <Shield className="h-3 w-3" /> Coach
           </span>
         )}
@@ -62,8 +62,8 @@ export function CommentItem({ comment, actions, isReply }: { comment: CommentNod
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-ink-500">
-        <button onClick={() => actions.like(comment._id)} className={cn("flex items-center gap-1 hover:text-ball-600", comment.likedByMe && "text-ball-600")}>
-          <Heart className={cn("h-3.5 w-3.5", comment.likedByMe && "fill-ball-500")} /> {comment.likeCount}
+        <button onClick={() => actions.like(comment._id)} className={cn("flex items-center gap-1 hover:text-rose-gold-600", comment.likedByMe && "text-rose-gold-600")}>
+          <Heart className={cn("h-3.5 w-3.5", comment.likedByMe && "fill-rose-gold-500")} /> {comment.likeCount}
         </button>
         {!isReply && (
           <button onClick={() => setReplying((v) => !v)} className="flex items-center gap-1 hover:text-pitch-700">
@@ -86,7 +86,7 @@ export function CommentItem({ comment, actions, isReply }: { comment: CommentNod
           </button>
         )}
         {(isOwner || isAdmin) && (
-          <button onClick={() => actions.remove(comment._id)} className="flex items-center gap-1 hover:text-ball-600">
+          <button onClick={() => actions.remove(comment._id)} className="flex items-center gap-1 hover:text-rose-gold-600">
             <Trash2 className="h-3.5 w-3.5" /> Delete
           </button>
         )}

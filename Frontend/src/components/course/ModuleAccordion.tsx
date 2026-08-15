@@ -25,7 +25,7 @@ function ModuleRow({ module, defaultOpen }: { module: Module; defaultOpen?: bool
         <span className="font-semibold text-ink-900">{module.moduleName}</span>
         <span className="flex items-center gap-2 text-xs text-ink-400">
           {module.topics.length} topics
-          {module.test && <span className="rounded bg-ball-50 px-1.5 py-0.5 text-ball-600">Test</span>}
+          {module.test && <span className="rounded bg-rose-gold-50 px-1.5 py-0.5 text-rose-gold-600">Test</span>}
           <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
         </span>
       </button>
@@ -45,7 +45,7 @@ function ModuleRow({ module, defaultOpen }: { module: Module; defaultOpen?: bool
             </li>
           ))}
           {module.test && (
-            <li className="flex items-center gap-2 py-1.5 text-sm text-ball-600">
+            <li className="flex items-center gap-2 py-1.5 text-sm text-rose-gold-600">
               <ClipboardCheck className="h-4 w-4" /> Module test
             </li>
           )}

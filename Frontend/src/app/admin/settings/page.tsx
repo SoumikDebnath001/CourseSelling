@@ -240,7 +240,7 @@ export default function AdminSettingsPage() {
                       <button
                         onClick={() => img.publicId && removeAboutImage.mutate(img.publicId)}
                         disabled={removeAboutImage.isPending}
-                        className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-ball-600"
+                        className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-rose-gold-600"
                         title="Remove image"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -293,7 +293,7 @@ export default function AdminSettingsPage() {
                         <button
                           onClick={() => removeLevel(i)}
                           disabled={form.levels.length <= 1}
-                          className="mt-5 flex h-9 items-center justify-center rounded-lg border border-ink-200 text-ink-400 hover:text-ball-600 disabled:opacity-30"
+                          className="mt-5 flex h-9 items-center justify-center rounded-lg border border-ink-200 text-ink-400 hover:text-rose-gold-600 disabled:opacity-30"
                           title="Remove level"
                         >
                           <Trash2 className="h-4 w-4" />
