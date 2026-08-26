@@ -12,6 +12,7 @@ import { useMyEnrolledCourses, useMyTransactions } from "@/hooks/useLearn";
 import { useMyProgression, useMyCertificates } from "@/hooks/useProgression";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth, type AuthAccount } from "@/store/auth";
+import { useAuthRefresh } from "@/hooks/useAuthActions";
 import { Spinner } from "@/components/ui/Spinner";
 import { generateCertificate, resolveSignatories } from "@/lib/certificate";
 import { formatKES } from "@/lib/currency";
@@ -21,6 +22,7 @@ import type { EnrolledCourse, Transaction, CategoryProgress } from "@/types/api"
 
 function DashboardInner() {
   const { data: courses, isLoading } = useMyEnrolledCourses();
+  useAuthRefresh();
   const [view, setView] = useState<DashView>("my");
 
   const completed = (courses ?? []).filter((c) => c.percent >= 100);

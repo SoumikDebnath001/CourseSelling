@@ -228,5 +228,35 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
 
 export const me = asyncHandler(async (req: Request, res: Response) => {
   if (!req.auth) throw new ApiError(401, "Authentication required");
-  res.json({ success: true, account: accountResponse(req.auth) });
+
+  // Re-read the user's current name/email from the database so admin-side
+  // changes (name edits, etc.) are picked up without requiring a re-login.
+  let freshName = req.auth.name;
+  let freshEmail = req.auth.email;
+
+  if (req.auth.kind === "user") {
+    if (req.auth.source === "member") {
+      const member = await ExistingUser.findById(req.auth.id).select("name email").lean();
+      if (member) { freshName = member.name; freshEmail = member.email; }
+    } else {
+      const platform = await OnlinePlatformUser.findById(req.auth.id).select("name email").lean();
+      if (platform) { freshName = platform.name; freshEmail = platform.email; }
+    }
+  } else if (req.auth.kind === "admin") {
+    const admin = await ExistingAdmin.findById(req.auth.id).select("name email").lean();
+    if (admin) { freshName = admin.name; freshEmail = admin.email; }
+  }
+
+  const changed = freshName !== req.auth.name || freshEmail !== req.auth.email;
+  const payload: AuthPayload = { ...req.auth, name: freshName, email: freshEmail };
+  const account = accountResponse(payload);
+
+  // If anything changed since the JWT was signed, issue a refreshed token so
+  // the frontend can persist the updated details without a full re-login.
+  res.json({
+    success: true,
+    account,
+    ...(changed ? { token: signToken(payload) } : {}),
+  });
 });
+

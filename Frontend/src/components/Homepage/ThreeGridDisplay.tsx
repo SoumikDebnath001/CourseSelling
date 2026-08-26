@@ -270,9 +270,9 @@ export default function ThreeGirdDisplay() {
             >
                 {/* Background Design Elements */}
                 <div className="absolute inset-0 z-0 pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
-                <div className="absolute -left-40 top-0 z-0 h-[60vh] w-[60vh] rounded-full bg-green-500/20 blur-[120px] pointer-events-none" />
-                <div className="absolute -right-40 bottom-0 z-0 h-[60vh] w-[60vh] rounded-full bg-amber-500/20 blur-[120px] pointer-events-none" />
-                <div className="absolute left-1/2 top-1/2 z-0 h-[80vh] w-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[150px] pointer-events-none" />
+                <div className="absolute -left-40 top-0 z-0 h-[60vh] w-[60vh] rounded-full bg-green-500/20 blur-[100px] pointer-events-none transform-gpu" />
+                <div className="absolute -right-40 bottom-0 z-0 h-[60vh] w-[60vh] rounded-full bg-amber-500/20 blur-[100px] pointer-events-none transform-gpu" />
+                <div className="absolute left-1/2 top-1/2 z-0 h-[80vh] w-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[120px] pointer-events-none transform-gpu" />
 
                 <div className="mb-6 z-10 text-center text-green-600 border-[4px] border-[#FFD700] px-8 py-3 rounded-2xl text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase tracking-widest bg-white/40 backdrop-blur-xl shadow-2xl">
                     The Obuya Blueprint

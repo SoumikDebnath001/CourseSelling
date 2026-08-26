@@ -3,6 +3,18 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+/**
+ * Computes a dynamic font size for the student name so long names scale down
+ * to fit within the certificate's content area. Names ≤ 16 characters use the
+ * full base size; longer names shrink by ~2 px per extra character, floored at
+ * a readable minimum.
+ */
+function dynamicNameFontSize(name: string, basePx: number, minPx = 28): number {
+  const threshold = 16;
+  if (name.length <= threshold) return basePx;
+  return Math.max(minPx, basePx - (name.length - threshold) * 2);
+}
+
 export type CertificateOrientation = "portrait" | "landscape";
 
 /** One signatory block printed at the bottom of the certificate (admin-editable). */
@@ -155,7 +167,7 @@ export async function generateCertificate({
   .divider { margin-top: 14px; }
   .divider .rule { width: 130px; }
   .presented { margin-top: 18px; font-size: 13px; }
-  .name { margin-top: 8px; font-size: 50px; }
+  .name { margin-top: 8px; }
   .name-rule { margin-top: 8px; width: 360px; }
   .for { margin-top: 14px; max-width: 560px; }
   .course { margin-top: 6px; font-size: 23px; max-width: 620px; }
@@ -176,7 +188,7 @@ export async function generateCertificate({
   .divider { margin-top: 22px; }
   .divider .rule { width: 110px; }
   .presented { margin-top: 34px; font-size: 14px; }
-  .name { margin-top: 14px; font-size: 58px; }
+  .name { margin-top: 14px; }
   .name-rule { margin-top: 10px; width: 340px; }
   .for { margin-top: 26px; max-width: 420px; }
   .course { margin-top: 12px; font-size: 27px; max-width: 460px; }
@@ -212,7 +224,7 @@ export async function generateCertificate({
   .divider .rule.r { background: linear-gradient(90deg, #c9a227, transparent); }
   .divider .dot { font-size: 12px; }
   .presented { letter-spacing: 2px; color: #6b7060; text-transform: uppercase; }
-  .name { font-family: "Great Vibes", "Segoe Script", cursive; font-weight: 400; color: #1c4620; line-height: 1.1; max-width: 100%; }
+  .name { font-family: "Great Vibes", "Segoe Script", cursive; font-weight: 400; color: #1c4620; line-height: 1.1; max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
   .name-rule { height: 1.5px; background: linear-gradient(90deg, transparent, #c9a227 25%, #c9a227 75%, transparent); }
   .for { font-size: 13.5px; line-height: 1.7; color: #6b7060; }
   .course { font-family: "Playfair Display", Georgia, serif; font-weight: 600; color: ${accent}; line-height: 1.3; }
@@ -250,7 +262,7 @@ export async function generateCertificate({
       <div class="divider"><span class="rule"></span><span class="dot">◆</span><span class="rule r"></span></div>
 
       <div class="presented">This certificate is proudly presented to</div>
-      <div class="name">${escapeHtml(studentName)}</div>
+      <div class="name" style="font-size:${dynamicNameFontSize(studentName, landscape ? 50 : 58)}px">${escapeHtml(studentName)}</div>
       <div class="name-rule"></div>
 
       <div class="for">for successfully completing all requirements of the course</div>
