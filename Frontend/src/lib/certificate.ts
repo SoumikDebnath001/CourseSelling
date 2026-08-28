@@ -82,7 +82,7 @@ const KENYA_TZ = "Africa/Nairobi";
  * Opens a print-ready A4 completion certificate (vertical or horizontal) in a
  * new window so the browser can save it as a high-resolution PDF (all text
  * stays vector). The layout is generic for every course and uses the official
- * Obuya Cricket Academy artwork in /public/certificate: gold frame, ribbon
+ * The obuya blueprint artwork in /public/certificate: gold frame, ribbon
  * medallion and the academy + foundation logos. The signatory block and the
  * signature image come from the admin's certificate settings. Real (serial-
  * bearing) certificates carry a QR code linking to the public /verify page.
@@ -252,9 +252,9 @@ export async function generateCertificate({
     <div class="content">
       <div class="logos">
         <img src="${asset("logo-foundation.png")}" alt="Obuya Grassroots Foundation" />
-        <img src="${asset("logo-academy.png")}" alt="Obuya Cricket Academy" />
+        <img src="${asset("logo-academy.png")}" alt="The obuya blueprint" />
       </div>
-      <div class="academy-name">Obuya Cricket Academy</div>
+      <div class="academy-name">Obuya Grassroots Foundation</div>
       <div class="academy-sub">The High Performance Centre of Excellence</div>
 
       <div class="title">CERTIFICATE</div>

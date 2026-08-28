@@ -41,7 +41,7 @@ export const DEFAULT_CERTIFICATE_BRANDING = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  platformName: "Cricket Academy",
+  platformName: "The obuya blueprint",
   hero: {},
   foundation: {},
   certificate: { ...DEFAULT_CERTIFICATE_BRANDING },

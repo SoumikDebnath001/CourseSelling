@@ -7,7 +7,7 @@ import { useSettings } from "@/hooks/useSettings";
 const FALLBACK = {
   title: "About the Academy",
   intro:
-    "The Cricket Academy brings structured, video-first coaching to members — batting, bowling, fielding and match craft, broken into modules and topics you can learn at your own pace.",
+    "The The obuya blueprint brings structured, video-first coaching to members — batting, bowling, fielding and match craft, broken into modules and topics you can learn at your own pace.",
   body:
     "Each lesson includes resources, optional tests to check your understanding, and a comment space where you can ask coaches questions directly under the video.\n\nCourses are created and curated by academy admins and coaches. Log in with your academy account to access everything.",
 };

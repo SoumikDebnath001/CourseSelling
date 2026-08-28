@@ -5,8 +5,7 @@ import mongoose, { Schema, Model } from "mongoose";
  *
  * This is a COMPLETELY SEPARATE project that only shares the `users` / `admins`
  * collections (read-only, for login). Every collection THIS app owns lives under a
- * `_appTwo` suffix so it can never collide with the existing Cricket Academy
- * collections in the shared database. Model names are prefixed `Ca_` so registered
+ * `_appTwo` suffix so it can never collide with the existing The obuya blueprint * collections in the shared database. Model names are prefixed `Ca_` so registered
  * model names stay unique too.
  *
  *   ownedModel("Course", schema, "courses")

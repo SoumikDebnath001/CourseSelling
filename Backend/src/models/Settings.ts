@@ -185,7 +185,7 @@ const levelSchema = new Schema<LevelDef>(
 
 const settingsSchema = new Schema<ISettings>(
   {
-    platformName: { type: String, default: "Cricket Academy", trim: true },
+    platformName: { type: String, default: "The obuya blueprint", trim: true },
     email: { type: String, trim: true },
     contactPhone: { type: String, trim: true },
     place: { type: String, trim: true },

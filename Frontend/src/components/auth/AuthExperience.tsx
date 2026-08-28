@@ -124,13 +124,13 @@ export function AuthExperience() {
           {/* Desktop Logo (Absolute) */}
           <Link href="/" className="hidden lg:flex absolute left-8 top-8 items-center gap-2 text-white transition-opacity hover:opacity-80">
             <Image src="/brand/logo.png" alt="Logo" width={32} height={32} className="rounded-lg bg-white/20 p-1" />
-            <span className="font-extrabold tracking-tight">Cricket Academy</span>
+            <span className="font-extrabold tracking-tight">The obuya blueprint</span>
           </Link>
 
           {/* Mobile Logo (Relative, above SVG) */}
           <Link href="/" className="mb-4 flex items-center gap-2 text-white lg:hidden transition-opacity hover:opacity-80">
             <Image src="/brand/logo.png" alt="Logo" width={32} height={32} className="rounded-lg bg-white/20 p-1" />
-            <span className="text-lg font-extrabold tracking-tight">Cricket Academy</span>
+            <span className="text-lg font-extrabold tracking-tight">The obuya blueprint</span>
           </Link>
 
           <div className="relative mt-2 lg:mt-8 w-full max-w-[180px] lg:max-w-xs aspect-[4/3] transition-all duration-500 drop-shadow-2xl hover:scale-105">

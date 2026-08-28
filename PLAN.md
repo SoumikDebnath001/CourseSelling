@@ -1,6 +1,6 @@
-# Cricket Academy — Course Selling Platform · Architecture Plan
+# The obuya blueprint — Course Selling Platform · Architecture Plan
 
-> A **second app** that lives alongside an existing Cricket Academy / Obuya Grassroots
+> A **second app** that lives alongside an existing The obuya blueprint / Obuya Grassroots
 > platform and **shares the same MongoDB database**. It is inspired by the StudyNotion
 > EdTech project (course → module → topic → video flow), rewritten in modern TypeScript,
 > and extended with **per-video comments (like / star / pin)**, **optional module tests**,
@@ -334,7 +334,7 @@ MONGODB_URI=                      # SAME cluster/db as the existing app
 JWT_SECRET=
 JWT_EXPIRES_IN=7d
 CLOUDINARY_CLOUD_NAME=  CLOUDINARY_API_KEY=  CLOUDINARY_API_SECRET=
-MAIL_HOST=  MAIL_USER=  MAIL_PASS=  MAIL_FROM="Cricket Academy <...>"
+MAIL_HOST=  MAIL_USER=  MAIL_PASS=  MAIL_FROM="The obuya blueprint <...>"
 CLIENT_URL=http://localhost:3000
 ```
 **Frontend `.env.local`**

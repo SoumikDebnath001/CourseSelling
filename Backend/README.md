@@ -1,4 +1,4 @@
-# Cricket Academy — Courses (Backend)
+# The obuya blueprint — Courses (Backend)
 
 Express + TypeScript + MongoDB. **Shares** the existing academy database but is
 strictly isolated from it.

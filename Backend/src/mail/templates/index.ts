@@ -47,7 +47,7 @@ function termsBlock(terms: string): string {
 
 export function otpVerifyEmail(name: string, otp: string, terms?: string) {
   return {
-    subject: "Verify your email — Cricket Academy",
+    subject: "Verify your email — The obuya blueprint",
     html: baseLayout({
       title: "Confirm your email ✉️",
       body: `<p>Hi ${name},</p><p>Welcome! Use this code to verify your email and activate your account:</p>${otpBlock(otp)}${terms ? termsBlock(terms) : ""}`,
@@ -57,7 +57,7 @@ export function otpVerifyEmail(name: string, otp: string, terms?: string) {
 
 export function otpLoginEmail(name: string, otp: string) {
   return {
-    subject: "Your login code — Cricket Academy",
+    subject: "Your login code — The obuya blueprint",
     html: baseLayout({
       title: "Your one-time login code 🔐",
       body: `<p>Hi ${name},</p><p>Use this code to sign in:</p>${otpBlock(otp)}`,
@@ -127,7 +127,7 @@ export function physicalAssessmentScheduledEmail(
 
 export function physicalAssessmentOtpEmail(name: string, otp: string) {
   return {
-    subject: "Your physical assessment check-in code — Cricket Academy",
+    subject: "Your physical assessment check-in code — The obuya blueprint",
     html: baseLayout({
       title: "Check-in verification code 🔐",
       body: `<p>Hi ${name},</p><p>Share this code with our team to check in for your physical assessment:</p>${otpBlock(otp)}`,

@@ -2,7 +2,7 @@
   "name": "cricket-academy-courses-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Course-selling API for the Cricket Academy. Shares the existing MongoDB but writes only to *_appTwo collections.",
+  "description": "Course-selling API for the The obuya blueprint. Shares the existing MongoDB but writes only to *_appTwo collections.",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

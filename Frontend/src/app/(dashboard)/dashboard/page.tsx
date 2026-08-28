@@ -48,11 +48,11 @@ function DashboardInner() {
     if (isSidebarOpen) {
       gsap.to(overlayRef.current, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
       gsap.to(sidebarRef.current, { x: 0, duration: 0.4, ease: "power3.out" });
-      document.body.style.overflow = "hidden"; 
+      document.body.style.overflow = "hidden";
     } else {
       gsap.to(overlayRef.current, { autoAlpha: 0, duration: 0.3, ease: "power2.in" });
       gsap.to(sidebarRef.current, { x: "-100%", duration: 0.4, ease: "power3.in" });
-      document.body.style.overflow = ""; 
+      document.body.style.overflow = "";
     }
     return () => { document.body.style.overflow = ""; };
   }, [isSidebarOpen]);
@@ -81,7 +81,7 @@ function DashboardInner() {
   return (
     <div className="min-h-screen bg-ink-50 flex flex-col relative">
       <AccountBar home="/dashboard" hideLogout={true} onMenuClick={() => setIsSidebarOpen(true)} />
-      
+
       <div className="mx-auto flex w-full max-w-6xl gap-6 px-4 py-6 flex-1">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-72 shrink-0">
@@ -116,7 +116,7 @@ function DashboardInner() {
       </div>
 
       {/* ───────── Mobile Sidebar Overlay ───────── */}
-      <div 
+      <div
         ref={overlayRef}
         className="fixed inset-0 z-[60] bg-ink-900/40 backdrop-blur-sm invisible opacity-0 lg:hidden"
         onClick={() => setIsSidebarOpen(false)}
@@ -124,13 +124,13 @@ function DashboardInner() {
       />
 
       {/* ───────── Mobile Sidebar ───────── */}
-      <div 
+      <div
         ref={sidebarRef}
         className="fixed top-0 left-0 z-[70] h-[100dvh] w-80 bg-ink-50 shadow-2xl -translate-x-full lg:hidden flex flex-col"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-ink-200 bg-white">
           <span className="font-extrabold text-ink-900">Dashboard Menu</span>
-          <button 
+          <button
             className="p-2 text-ink-500 hover:text-teal-600 hover:bg-ink-100 rounded-full transition-colors focus:outline-none"
             onClick={() => setIsSidebarOpen(false)}
             aria-label="Close menu"
@@ -138,14 +138,14 @@ function DashboardInner() {
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-4 pb-8">
-          <DashboardSidebar 
-            view={view} 
+          <DashboardSidebar
+            view={view}
             setView={(v) => {
               setView(v);
               setIsSidebarOpen(false);
-            }} 
+            }}
           />
         </div>
       </div>
@@ -377,7 +377,7 @@ function downloadInvoice(t: Transaction, account: AuthAccount | null) {
 </head>
 <body>
   <div class="head">
-    <div class="brand">🏏 Cricket Academy<small>Online Courses</small></div>
+    <div class="brand">🏏 The obuya blueprint<small>Online Courses</small></div>
     <div class="inv">
       <h1>INVOICE</h1>
       <p>${t.invoiceNo}</p>
@@ -415,7 +415,7 @@ function downloadInvoice(t: Transaction, account: AuthAccount | null) {
     </div>
   </div>
 
-  <footer>Thank you for learning with Cricket Academy. This is a computer-generated invoice.</footer>
+  <footer>Thank you for learning with The obuya blueprint. This is a computer-generated invoice.</footer>
 
   <script>window.onload = function () { window.print(); };</script>
 </body>

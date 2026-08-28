@@ -1,4 +1,4 @@
-# Cricket Academy — Courses (Frontend)
+# The obuya blueprint — Courses (Frontend)
 
 Next.js 15 (App Router) + TypeScript + Tailwind + TanStack Query + Zustand.
 

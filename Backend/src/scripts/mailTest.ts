@@ -27,7 +27,7 @@ async function main() {
   const sample = otpVerifyEmail("there", "123456");
   console.log(`\nSending a test email to: ${to} …`);
 
-  const ok = await mailSender(to, "✅ Cricket Academy mail test", sample.html);
+  const ok = await mailSender(to, "✅ The obuya blueprint mail test", sample.html);
   if (ok) {
     console.log("\n✅ Sent. Check that inbox (and Spam). SMTP credentials work.\n");
     process.exit(0);

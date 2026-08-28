@@ -59,7 +59,7 @@ const schema = z.object({
   MAIL_PORT: z.coerce.number().optional(),
   MAIL_USER: z.string().optional(),
   MAIL_PASS: z.string().optional(),
-  MAIL_FROM: z.string().default("Cricket Academy <no-reply@cricketacademy.com>"),
+  MAIL_FROM: z.string().default("The obuya blueprint <no-reply@cricketacademy.com>"),
 });
 
 // Accept either MAIL_* (this app's convention) or SMTP_* (the existing app's

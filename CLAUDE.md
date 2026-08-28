@@ -1,6 +1,6 @@
-# Obuya Cricket Academy — E-Learning Platform
+# The obuya blueprint — E-Learning Platform
 
-Course-selling / e-learning platform for the Obuya Cricket Academy (Kenya). Students register,
+Course-selling / e-learning platform for the The obuya blueprint (Kenya). Students register,
 buy/enroll in cricket courses, watch video lessons, take tests, climb progression levels, and earn
 certificates (some gated behind an in-person physical assessment).
 

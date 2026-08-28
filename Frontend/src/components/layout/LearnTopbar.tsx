@@ -41,8 +41,8 @@ export function LearnTopbar() {
     <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/brand/logo.png" alt="Cricket Academy" width={32} height={32} />
-          <span className="font-extrabold text-ink-900">Cricket Academy</span>
+          <Image src="/brand/logo.png" alt="The obuya blueprint" width={32} height={32} />
+          <span className="font-extrabold text-ink-900">The obuya blueprint</span>
         </Link>
 
         <div className="relative" ref={menuRef}>
