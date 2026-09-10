@@ -16,6 +16,7 @@ import contactRoutes from "./contact";
 import settingsRoutes from "./settings";
 import certificateRoutes from "./certificate";
 import physicalAssessmentRoutes from "./physicalAssessment";
+import sponsorRoutes from "./sponsor";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use("/contact", contactRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/certificates", certificateRoutes);
 router.use("/physical-assessments", physicalAssessmentRoutes);
+router.use("/sponsors", sponsorRoutes);
 
 export default router;

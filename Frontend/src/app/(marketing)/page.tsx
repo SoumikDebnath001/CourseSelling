@@ -25,6 +25,8 @@ import FoundationSection from "@/components/Homepage/FoundationSection";
 import OurCoursesSection from "@/components/Homepage/OurCoursesSection";
 import JoinCTASection from "@/components/Homepage/JoinCTASection";
 import SideDecor from "@/components/Homepage/SideDecor";
+import { SponsorsShowcase } from "@/components/SponsorsShowcase";
+import { useSponsors } from "@/hooks/useSponsors";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -106,6 +108,7 @@ function useCtaHover() {
 export default function HomePage() {
   const { data: courses } = useCatalog();
   const { settings } = useSettings();
+  const { data: sponsors } = useSponsors();
 
   const featured = courses?.slice(0, 4) ?? [];
   const account = useAuth((s) => s.account);
@@ -219,6 +222,8 @@ export default function HomePage() {
       />
 
       <OurCoursesSection featured={featured} />
+
+      <SponsorsShowcase sponsors={sponsors ?? []} />
 
       <JoinCTASection account={account} cta={cta} />
     </div>
