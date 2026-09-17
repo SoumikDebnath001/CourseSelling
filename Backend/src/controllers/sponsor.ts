@@ -3,7 +3,19 @@ import { z } from "zod";
 import type { UploadedFile } from "express-fileupload";
 import { asyncHandler, ApiError } from "../utils/asyncHandler";
 import { Sponsor } from "../models/Sponsor";
-import { uploadFile, deleteFile, assertAllowedFile } from "../utils/storage";
+import { uploadFile, deleteFile, assertAllowedFile, signedAssetUrl } from "../utils/storage";
+
+type SignableSponsor = { imageUrl?: { url?: string; publicId?: string } | null };
+
+/**
+ * Re-sign the logo's presigned R2 URL in place. The stored `url` is only valid for a few hours
+ * after upload, so every response must carry a fresh one derived from the durable `publicId`.
+ */
+function signSponsorImage<T extends SignableSponsor>(sponsor: T): T {
+  const img = sponsor.imageUrl;
+  if (img?.publicId) img.url = signedAssetUrl(img.publicId, img.url);
+  return sponsor;
+}
 
 const formBoolean = z.preprocess(
   (v) => (v === undefined ? undefined : v === true || v === "true" || v === "1"),
@@ -38,7 +50,7 @@ export const createSponsor = asyncHandler(async (req: Request, res: Response) =>
     imageUrl,
   });
 
-  res.status(201).json({ success: true, sponsor });
+  res.status(201).json({ success: true, sponsor: signSponsorImage(sponsor.toObject()) });
 });
 
 export const listSponsors = asyncHandler(async (req: Request, res: Response) => {
@@ -50,14 +62,14 @@ export const listSponsors = asyncHandler(async (req: Request, res: Response) => 
   const sponsors = await Sponsor.find({ isActive: true, isDeleted: false })
     .sort({ order: 1, createdAt: -1 })
     .lean();
-  res.json({ success: true, sponsors });
+  res.json({ success: true, sponsors: sponsors.map(signSponsorImage) });
 });
 
 export const listAdminSponsors = asyncHandler(async (_req: Request, res: Response) => {
   const sponsors = await Sponsor.find({ isDeleted: false })
     .sort({ order: 1, createdAt: -1 })
     .lean();
-  res.json({ success: true, sponsors });
+  res.json({ success: true, sponsors: sponsors.map(signSponsorImage) });
 });
 
 export const updateSponsor = asyncHandler(async (req: Request, res: Response) => {
@@ -82,7 +94,7 @@ export const updateSponsor = asyncHandler(async (req: Request, res: Response) =>
   if (body.isActive !== undefined) sponsor.isActive = body.isActive;
 
   await sponsor.save();
-  res.json({ success: true, sponsor });
+  res.json({ success: true, sponsor: signSponsorImage(sponsor.toObject()) });
 });
 
 export const deleteSponsor = asyncHandler(async (req: Request, res: Response) => {
