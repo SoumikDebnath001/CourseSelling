@@ -31,7 +31,6 @@ export function Watermark() {
         height={900}
         className="w-[70vmin] max-w-none"
         style={{ opacity }}
-        priority
       />
     </div>
   );

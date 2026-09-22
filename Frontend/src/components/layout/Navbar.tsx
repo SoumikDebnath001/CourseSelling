@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
@@ -122,8 +122,28 @@ export function Navbar() {
       ? "/admin"
       : "/dashboard";
 
+  // Stable nav items — PillNav rebuilds its GSAP timelines (and replays its
+  // intro animation) whenever this array identity changes.
+  const navItems = useMemo(
+    () => [
+      { label: "Home", href: "/" },
+      { label: "Courses", href: "/catalog" },
+      { label: "About us", href: "/about" },
+      {
+        label: account
+          ? account.kind === "admin"
+            ? "Admin"
+            : "Dashboard"
+          : "Login / Register",
+        href: account ? dashHref : "/login",
+      },
+    ],
+    [account, dashHref]
+  );
+
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -189,35 +209,12 @@ export function Navbar() {
       <header className="fixed left-0 top-0 z-50 w-full pt-3">
         <nav className="mx-auto flex max-w-6xl items-center justify-center px-4">
           <PillNav
-            logo="/brand/logo.png"
+            logo="/brand/logo-sm.webp"
             logoAlt={settings?.platformName || "Academy"}
             logoText={settings?.platformName || "Academy"}
             logoTextColor="#d97706"
-            items={[
-              {
-                label: "Home",
-                href: "/",
-              },
-              {
-                label: "Courses",
-                href: "/catalog",
-              },
-              {
-                label: "About us",
-                href: "/about",
-              },
-              {
-                label: account
-                  ? account.kind === "admin"
-                    ? "Admin"
-                    : "Dashboard"
-                  : "Login / Register",
-                href: account ? dashHref : "/login",
-              },
-            ]}
-            onMobileMenuClick={() =>
-              setIsSidebarOpen(true)
-            }
+            items={navItems}
+            onMobileMenuClick={openSidebar}
             ease="power2.easeOut"
             baseColor="#16a34a"
             pillColor="rgba(255,255,255,0.12)"

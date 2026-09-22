@@ -1,24 +1,39 @@
+import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Counter from "@/components/ui/Counter";
+import { useAppLoaded } from "@/lib/appLoader";
 
-export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
+/** Digit places for a whole number, e.g. 3000 → [1000, 100, 10, 1]. */
+const placesOf = (n: number) =>
+  Array.from({ length: String(n).length }, (_, i) => 10 ** (String(n).length - 1 - i));
+
+function HeroSection({ hero, cta }: { hero: any; cta: any }) {
+  // Hold the count-up at 0 until the page loader is gone so it's visible.
+  const appLoaded = useAppLoaded();
+
   return (
     <section
       className="
     relative
+    isolate
     min-h-[100vh]
     lg:h-[100vh]
     overflow-hidden
-    bg-cover
-    bg-center
-    bg-no-repeat
   "
-      style={{
-        backgroundImage: "url('/homepage/HomeHero2.png')",
-      }}
     >
+      {/* ───────── Background photo (optimised + preloaded as the LCP image) ───────── */}
+      <Image
+        src="/homepage/HomeHero2.png"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        quality={80}
+        className="-z-10 object-cover object-center"
+      />
+
       {/* ───────── Dark readability overlay ───────── */}
       <div
         className="
@@ -294,7 +309,8 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
               "
                   >
                   <Counter
-                    value={s.value}
+                    value={appLoaded ? s.value : 0}
+                    places={placesOf(s.value)}
                     fontSize={30}
                     padding={0}
                     gap={1}
@@ -409,12 +425,13 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
           />
 
           {/* ONLY SURROUNDING ELEMENTS ANIMATE */}
-          <div className="orbit absolute inset-0 z-30">
+          <div className="orbit absolute inset-0 z-30 animate-[spin_22s_linear_infinite]">
 
             {/* Cricket ball */}
             <div
               className="
             satellite
+            animate-[spin_22s_linear_infinite_reverse]
             absolute
             -right-4
             top-6
@@ -454,6 +471,7 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
             <div
               className="
             satellite
+            animate-[spin_22s_linear_infinite_reverse]
             absolute
             -left-5
             bottom-12
@@ -486,6 +504,7 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
             <div
               className="
             satellite
+            animate-[spin_22s_linear_infinite_reverse]
             absolute
             -bottom-3
             right-10
@@ -516,6 +535,7 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
             <div
               className="
             satellite
+            animate-[spin_22s_linear_infinite_reverse]
             absolute
             left-12
             -top-2
@@ -572,3 +592,5 @@ export default function HeroSection({ hero, cta }: { hero: any; cta: any }) {
     </section>
   );
 }
+
+export default memo(HeroSection);

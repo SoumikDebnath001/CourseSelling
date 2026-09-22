@@ -1,6 +1,8 @@
+import { memo } from "react";
 import { PlayCircle } from "lucide-react";
+import FixedBackdrop from "./FixedBackdrop";
 
-export default function IntroVideoSection({
+function IntroVideoSection({
   introVideo,
   heroVideo,
 }: {
@@ -8,9 +10,9 @@ export default function IntroVideoSection({
   heroVideo?: string;
 }) {
   return (
-    <section className="relative z-20 -mt-[100vh] min-h-screen flex flex-col justify-center w-full bg-[url('/homepage/HomeHero2.png')] bg-fixed bg-cover bg-center shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+    <section className="relative z-20 -mt-[100vh] min-h-screen flex flex-col justify-center w-full shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
       {/* Full width frosted glass overlay for parallax */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <FixedBackdrop />
 
       <div className="reveal relative mx-auto max-w-5xl px-4 py-12 lg:py-16">
         <div className="mb-6 text-center">
@@ -55,3 +57,5 @@ export default function IntroVideoSection({
     </section>
   );
 }
+
+export default memo(IntroVideoSection);

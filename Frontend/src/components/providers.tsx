@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { useState, type ReactNode } from "react";
 import { Watermark } from "@/components/layout/Watermark";
+import { AppLoader } from "@/components/layout/AppLoader";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
+      <AppLoader />
       <Watermark />
       {children}
       <Toaster

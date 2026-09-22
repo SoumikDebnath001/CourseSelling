@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -16,6 +16,7 @@ import {
 import { useCatalog } from "@/hooks/useCourses";
 import { useSettings, youtubeEmbedUrl } from "@/hooks/useSettings";
 import { useAuth } from "@/store/auth";
+import { whenAppLoaded } from "@/lib/appLoader";
 
 // Components
 import ThreeGirdDisplay from "@/components/Homepage/ThreeGridDisplay";
@@ -29,6 +30,8 @@ import { SponsorsShowcase } from "@/components/SponsorsShowcase";
 import { useSponsors } from "@/hooks/useSponsors";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+const NO_SPONSORS: never[] = [];
 
 /** Short benefit points listed below the foundation logo. */
 const BENEFITS = [
@@ -70,8 +73,8 @@ const BENEFITS = [
 ];
 
 /** Hover handlers that scale a CTA and nudge its trailing arrow. */
-function useCtaHover() {
-  const enter = (e: React.MouseEvent<HTMLElement>) => {
+const CTA_HOVER = {
+  onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1.05,
       duration: 0.3,
@@ -83,9 +86,9 @@ function useCtaHover() {
       duration: 0.3,
       ease: "power3.out",
     });
-  };
+  },
 
-  const leave = (e: React.MouseEvent<HTMLElement>) => {
+  onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1,
       duration: 0.3,
@@ -97,22 +100,17 @@ function useCtaHover() {
       duration: 0.3,
       ease: "power3.out",
     });
-  };
-
-  return {
-    onMouseEnter: enter,
-    onMouseLeave: leave,
-  };
-}
+  },
+};
 
 export default function HomePage() {
   const { data: courses } = useCatalog();
   const { settings } = useSettings();
   const { data: sponsors } = useSponsors();
 
-  const featured = courses?.slice(0, 4) ?? [];
+  const featured = useMemo(() => courses?.slice(0, 4) ?? [], [courses]);
   const account = useAuth((s) => s.account);
-  const cta = useCtaHover();
+  const cta = CTA_HOVER;
 
   const root = useRef<HTMLDivElement>(null);
 
@@ -126,38 +124,35 @@ export default function HomePage() {
 
   useGSAP(
     () => {
-      // Hero entrance
-      gsap.from(".hero-anim", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out",
-        stagger: 0.12,
-      });
+      // Hero + ball entrance — set up hidden now, played once the page
+      // loader has faded so the entrance isn't wasted behind it.
+      const intro = gsap
+        .timeline({ paused: true })
+        .from(
+          ".hero-anim",
+          {
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            stagger: 0.12,
+          },
+          0
+        )
+        .from(
+          ".hero-ball",
+          {
+            scale: 0,
+            opacity: 0,
+            duration: 0.9,
+            ease: "back.out(1.6)",
+          },
+          0.2
+        );
+      const stopWaiting = whenAppLoaded(() => intro.play());
 
-      // Ball entrance
-      gsap.from(".hero-ball", {
-        scale: 0,
-        opacity: 0,
-        duration: 0.9,
-        ease: "back.out(1.6)",
-        delay: 0.2,
-      });
-
-      // Orbit animation
-      gsap.to(".orbit", {
-        rotation: 360,
-        repeat: -1,
-        duration: 22,
-        ease: "none",
-      });
-
-      gsap.to(".satellite", {
-        rotation: -360,
-        repeat: -1,
-        duration: 22,
-        ease: "none",
-      });
+      // Orbit + satellite spin are CSS animations (see HeroSection) so they
+      // run on the compositor instead of ticking GSAP every frame.
 
       // Scroll-triggered reveals
       gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
@@ -172,6 +167,8 @@ export default function HomePage() {
           },
         });
       });
+
+      return stopWaiting;
     },
     { scope: root }
   );
@@ -192,7 +189,6 @@ export default function HomePage() {
           width={900}
           height={900}
           className="absolute -right-40 top-10 w-[600px] max-w-none opacity-[0.04]"
-          priority
         />
 
         <Image
@@ -223,7 +219,7 @@ export default function HomePage() {
 
       <OurCoursesSection featured={featured} />
 
-      <SponsorsShowcase sponsors={sponsors ?? []} />
+      <SponsorsShowcase sponsors={sponsors ?? NO_SPONSORS} />
 
       <JoinCTASection account={account} cta={cta} />
     </div>

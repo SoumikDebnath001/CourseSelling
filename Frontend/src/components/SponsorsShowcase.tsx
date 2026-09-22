@@ -1,22 +1,24 @@
 "use client";
 
+import { memo } from "react";
 import Image from "next/image";
 import type { Sponsor } from "@/types";
+import FixedBackdrop from "@/components/Homepage/FixedBackdrop";
 
 interface SponsorsShowcaseProps {
   sponsors: Sponsor[];
 }
 
-export function SponsorsShowcase({ sponsors }: SponsorsShowcaseProps) {
+export const SponsorsShowcase = memo(function SponsorsShowcase({ sponsors }: SponsorsShowcaseProps) {
   if (!sponsors || sponsors.length === 0) return null;
 
   return (
     <section
       aria-label="Our Sponsors"
-      className="relative py-20 overflow-hidden w-full bg-[url('/homepage/HomeHero2.png')] bg-fixed bg-cover bg-center"
+      className="relative py-20 overflow-hidden w-full"
     >
       {/* Full width frosted glass overlay */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-md"></div>
+      <FixedBackdrop blur="blur-md" overlay="bg-black/50" />
       <style>{`
         @keyframes sponsor-float {
           0%, 100% { transform: translateY(0px) scale(1); }
@@ -135,4 +137,4 @@ export function SponsorsShowcase({ sponsors }: SponsorsShowcaseProps) {
       </div>
     </section>
   );
-}
+});

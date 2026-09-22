@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef } from "react";
 type SlideType = { type: "image"; src: string } | { type: "icon"; icon: React.ReactNode; bg: string };
 type Position = "left" | "center" | "right";
 
@@ -8,7 +8,7 @@ const panelSlides: Record<Position, SlideType>[] = [
     {
         left: { type: "icon", icon: (
             <div className="relative h-full w-full">
-                <img src="/homepage/HomeHero1.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src="/homepage/HomeHero1.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <span className="text-3xl md:text-6xl font-black text-white uppercase tracking-widest drop-shadow-lg max-md:[writing-mode:vertical-rl] max-md:[text-orientation:upright]">Educate</span>
                 </div>
@@ -16,7 +16,7 @@ const panelSlides: Record<Position, SlideType>[] = [
         ), bg: "" },
         center: { type: "icon", icon: (
             <div className="relative h-full w-full">
-                <img src="/homepage/HomeHero2.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src="/homepage/HomeHero2.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <span className="text-3xl md:text-6xl font-black text-white uppercase tracking-widest drop-shadow-lg max-md:[writing-mode:vertical-rl] max-md:[text-orientation:upright]">Empower</span>
                 </div>
@@ -24,7 +24,7 @@ const panelSlides: Record<Position, SlideType>[] = [
         ), bg: "" },
         right: { type: "icon", icon: (
             <div className="relative h-full w-full">
-                <img src="/homepage/Paralleximage.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src="/homepage/Paralleximage.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <span className="text-3xl md:text-6xl font-black text-white uppercase tracking-widest drop-shadow-lg max-md:[writing-mode:vertical-rl] max-md:[text-orientation:upright]">Elevate</span>
                 </div>
@@ -34,24 +34,24 @@ const panelSlides: Record<Position, SlideType>[] = [
     {
         left: { type: "icon", icon: (
             <div className="flex h-full w-full items-center justify-center p-4">
-                <img src="/homepage/FirstSlide.png" alt="First Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
+                <img loading="lazy" decoding="async" src="/homepage/FirstSlide.webp" alt="First Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
             </div>
         ), bg: "bg-white/20 backdrop-blur-md border border-white/20" },
         center: { type: "icon", icon: (
             <div className="flex h-full w-full items-center justify-center p-4">
-                <img src="/homepage/MIddleSlide.png" alt="Middle Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
+                <img loading="lazy" decoding="async" src="/homepage/MIddleSlide.webp" alt="Middle Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
             </div>
         ), bg: "bg-white/20 backdrop-blur-md border border-white/20" },
         right: { type: "icon", icon: (
             <div className="flex h-full w-full items-center justify-center p-4">
-                <img src="/homepage/lastSlide.png" alt="Last Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
+                <img loading="lazy" decoding="async" src="/homepage/lastSlide.webp" alt="Last Slide" className="h-[90%] w-full object-contain drop-shadow-2xl" />
             </div>
         ), bg: "bg-white/20 backdrop-blur-md border border-white/20" },
     },
     {
-        left: { type: "image", src: "/homepage/Paralleximage.png" },
-        center: { type: "image", src: "/homepage/HomeHero1.png" },
-        right: { type: "image", src: "/homepage/HomeHero2.png" },
+        left: { type: "image", src: "/homepage/Paralleximage.webp" },
+        center: { type: "image", src: "/homepage/HomeHero1.webp" },
+        right: { type: "image", src: "/homepage/HomeHero2.webp" },
     },
 ];
 
@@ -61,28 +61,18 @@ const clamp = (
     max: number
 ) => Math.min(Math.max(value, min), max);
 
-const rangeProgress = (
-    progress: number,
-    start: number,
-    end: number
-) => {
-    if (end === start) return 0;
+/*
+ * Reveal clips are driven by the --s1 / --s2 CSS variables (0 → 1) that the
+ * scroll handler writes straight onto the section, so scrolling never
+ * re-renders React — the browser only recomputes the clip-paths.
+ */
+const REVEAL_DOWN = (v: string) => `inset(0 0 calc(100% - var(${v}) * 100%) 0)`;
+const REVEAL_UP = (v: string) => `inset(calc(100% - var(${v}) * 100%) 0 0 0)`;
 
-    return clamp(
-        (progress - start) / (end - start),
-        0,
-        1
-    );
-};
-
-function Panel({
+const Panel = memo(function Panel({
     position,
-    stage1,
-    stage2,
 }: {
     position: Position;
-    stage1: number;
-    stage2: number;
 }) {
     const isCenter = position === "center";
 
@@ -90,13 +80,9 @@ function Panel({
         (slide) => slide[position]
     );
 
-    const firstClip = isCenter
-        ? `inset(0 0 ${100 - stage1 * 100}% 0)`
-        : `inset(${100 - stage1 * 100}% 0 0 0)`;
+    const firstClip = isCenter ? REVEAL_DOWN("--s1") : REVEAL_UP("--s1");
 
-    const secondClip = isCenter
-        ? `inset(${100 - stage2 * 100}% 0 0 0)`
-        : `inset(0 0 ${100 - stage2 * 100}% 0)`;
+    const secondClip = isCenter ? REVEAL_UP("--s2") : REVEAL_DOWN("--s2");
 
     let clipClass = "";
     if (position === "left") {
@@ -117,7 +103,7 @@ function Panel({
                     {slides[0].icon}
                 </div>
             ) : (
-                <img src={slides[0].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={slides[0].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
             )}
 
             {/* Stage 1 */}
@@ -126,7 +112,7 @@ function Panel({
                     {slides[1].icon}
                 </div>
             ) : (
-                <img src={slides[1].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={{ clipPath: firstClip, willChange: "clip-path" }} />
+                <img loading="lazy" decoding="async" src={slides[1].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={{ clipPath: firstClip, willChange: "clip-path" }} />
             )}
 
             {/* Stage 2 */}
@@ -135,115 +121,75 @@ function Panel({
                     {slides[2].icon}
                 </div>
             ) : (
-                <img src={slides[2].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={{ clipPath: secondClip, willChange: "clip-path" }} />
+                <img loading="lazy" decoding="async" src={slides[2].src} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" style={{ clipPath: secondClip, willChange: "clip-path" }} />
             )}
         </div>
     );
-}
+});
 
-export default function ThreeGirdDisplay() {
+function ThreeGirdDisplay() {
     const sectionRef = useRef<HTMLElement | null>(null);
 
-    const [progress, setProgress] = useState(0);
-
     useEffect(() => {
-        let ticking = false;
+        const section = sectionRef.current;
+        if (!section) return;
+
+        let frame = 0;
+        let lastS1 = -1;
+        let lastS2 = -1;
 
         const updateProgress = () => {
-            const section = sectionRef.current;
-
-            if (!section) {
-                ticking = false;
-                return;
-            }
+            frame = 0;
 
             const rect = section.getBoundingClientRect();
 
             /*
-             * The section is 200vh.
-             *
-             * Sticky content occupies 100vh.
-             *
-             * Therefore the actual animation scroll distance
-             * is:
-             *
-             * 200vh - 100vh = 100vh
+             * The section is taller than the viewport and its content is
+             * sticky (100vh), so the animation scroll distance is
+             * section height - viewport height.
              */
-
             const scrollDistance =
                 section.offsetHeight - window.innerHeight;
 
-            if (scrollDistance <= 0) {
-                setProgress(0);
-                ticking = false;
-                return;
+            const progress =
+                scrollDistance <= 0
+                    ? 0
+                    : clamp(-rect.top / scrollDistance, 0, 1);
+
+            // Two equal stages: 0 → 0.5 and 0.5 → 1.
+            const s1 = clamp(progress * 2, 0, 1);
+            const s2 = clamp(progress * 2 - 1, 0, 1);
+
+            if (s1 !== lastS1) {
+                section.style.setProperty("--s1", String(s1));
+                lastS1 = s1;
             }
-
-            const currentProgress =
-                -rect.top / scrollDistance;
-
-            setProgress(
-                clamp(currentProgress, 0, 1)
-            );
-
-            ticking = false;
+            if (s2 !== lastS2) {
+                section.style.setProperty("--s2", String(s2));
+                lastS2 = s2;
+            }
         };
 
         const handleScroll = () => {
-            if (ticking) return;
-
-            ticking = true;
-
-            requestAnimationFrame(
-                updateProgress
-            );
+            if (!frame) frame = requestAnimationFrame(updateProgress);
         };
 
         updateProgress();
 
-        window.addEventListener(
-            "scroll",
-            handleScroll,
-            { passive: true }
-        );
-
-        window.addEventListener(
-            "resize",
-            handleScroll
-        );
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("resize", handleScroll);
 
         return () => {
-            window.removeEventListener(
-                "scroll",
-                handleScroll
-            );
-
-            window.removeEventListener(
-                "resize",
-                handleScroll
-            );
+            cancelAnimationFrame(frame);
+            window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleScroll);
         };
     }, []);
-
-    /*
-     * Divide the animation into 3 equal stages.
-     */
-
-    const stage1 = rangeProgress(
-        progress,
-        0,
-        0.5
-    );
-
-    const stage2 = rangeProgress(
-        progress,
-        0.5,
-        1
-    );
 
     return (
         <section
             ref={sectionRef}
+            style={{ "--s1": 0, "--s2": 0 } as React.CSSProperties}
             className="
                 relative
                 h-[400vh]
@@ -296,25 +242,15 @@ export default function ThreeGirdDisplay() {
                             flex
                         "
                     >
-                        <Panel
-                            position="left"
-                            stage1={stage1}
-                            stage2={stage2}
-                        />
+                        <Panel position="left" />
 
-                        <Panel
-                            position="center"
-                            stage1={stage1}
-                            stage2={stage2}
-                        />
+                        <Panel position="center" />
 
-                        <Panel
-                            position="right"
-                            stage1={stage1}
-                            stage2={stage2}
-                        />
+                        <Panel position="right" />
                     </div></div>
             </div>
         </section>
     );
 }
+
+export default memo(ThreeGirdDisplay);

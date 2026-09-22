@@ -1,7 +1,9 @@
+import { memo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import FixedBackdrop from "./FixedBackdrop";
 
-export default function JoinCTASection({
+function JoinCTASection({
   account,
   cta,
 }: {
@@ -11,8 +13,8 @@ export default function JoinCTASection({
   if (account) return null;
 
   return (
-    <section className="relative w-full bg-[url('/homepage/HomeHero2.png')] bg-fixed bg-cover bg-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <section className="relative w-full">
+      <FixedBackdrop />
 
       <div className="reveal relative mx-auto max-w-6xl px-4 pb-12 sm:pb-20 pt-8">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-600 to-amber-600 px-6 py-10 text-center sm:px-16 sm:py-12 shadow-2xl border border-white/10">
@@ -42,3 +44,5 @@ export default function JoinCTASection({
     </section>
   );
 }
+
+export default memo(JoinCTASection);

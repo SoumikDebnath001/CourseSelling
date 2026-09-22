@@ -1,14 +1,16 @@
+import { memo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CourseCard } from "@/components/course/CourseCard";
+import FixedBackdrop from "./FixedBackdrop";
 
-export default function OurCoursesSection({ featured }: { featured: any[] }) {
+function OurCoursesSection({ featured }: { featured: any[] }) {
   if (!featured || featured.length === 0) return null;
 
   return (
-    <section className="relative w-full bg-[url('/homepage/HomeHero2.png')] bg-fixed bg-cover bg-center shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+    <section className="relative w-full shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
       {/* Full width frosted glass overlay for parallax */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <FixedBackdrop />
 
       <div className="reveal relative mx-auto max-w-6xl px-4 py-10 lg:py-14">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -50,3 +52,5 @@ export default function OurCoursesSection({ featured }: { featured: any[] }) {
     </section>
   );
 }
+
+export default memo(OurCoursesSection);

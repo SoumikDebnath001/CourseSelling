@@ -28,14 +28,17 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Next.js standalone output copies only what's needed
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
 # Non-root user for security
 RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 appuser
+
+# Next.js standalone output copies only what's needed. `.next` must be owned by
+# the runtime user so the image optimiser can write its cache (.next/cache/images);
+# otherwise every image request is re-encoded from scratch.
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=appuser:appgroup /app/.next/standalone ./
+COPY --from=builder --chown=appuser:appgroup /app/.next/static ./.next/static
+RUN mkdir -p .next/cache && chown -R appuser:appgroup .next/cache
 USER appuser
 
 EXPOSE 3000

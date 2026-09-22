@@ -1,16 +1,10 @@
-import dynamic from "next/dynamic";
+import { memo } from "react";
 import Image from "next/image";
 import { HeartHandshake, ExternalLink, Globe, PlayCircle } from "lucide-react";
+// Lightweight wrapper — it lazy-loads the WebGL scene itself when scrolled near.
+import FoundationOrbit3D from "@/components/foundation/FoundationOrbit3D";
 
-/** 3D orbital centrepiece — WebGL, so load it client-side only. */
-const FoundationOrbit3D = dynamic(
-  () => import("@/components/foundation/FoundationOrbit3D"),
-  {
-    ssr: false,
-  }
-);
-
-export default function FoundationSection({
+function FoundationSection({
   foundationSite,
   foundationVideo,
   foundationImage,
@@ -163,3 +157,5 @@ export default function FoundationSection({
     </section>
   );
 }
+
+export default memo(FoundationSection);
