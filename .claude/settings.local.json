@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx next *)",
+      "Bash(curl -s http://localhost:4000/api/courses)",
+      "Bash(curl -s http://localhost:4000/api/settings)",
+      "Bash(curl -s http://localhost:4000/api/v1/courses)",
+      "Bash(curl -s http://localhost:4000/api/v1/settings)",
+      "Bash(curl -s -o /dev/null -w \"home: %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"course: %{http_code}\\\\n\" http://localhost:3000/courses/test-tn5sy)",
+      "Bash(curl -s -o /dev/null -w \"admin: %{http_code}\\\\n\" http://localhost:3000/admin/courses)",
+      "Bash(pkill -f \"next lint\")"
+    ]
+  }
+}
